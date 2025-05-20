@@ -58,7 +58,7 @@ export default function GlassCutVisualization({
     const startY = (canvasHeight - scaledGlassHeight) / 2
 
     // Dibujar el vidrio completo (borde definido)
-    ctx.fillStyle = "#e8e8e8" // Gris claro para el área sin cortar
+    ctx.fillStyle = "#e8f4f8" // Azul muy claro para el área sin cortar
     ctx.fillRect(startX, startY, scaledGlassWidth, scaledGlassHeight)
 
     // Borde del vidrio
@@ -66,54 +66,141 @@ export default function GlassCutVisualization({
     ctx.lineWidth = 2
     ctx.strokeRect(startX, startY, scaledGlassWidth, scaledGlassHeight)
 
-    // Dibujar el corte (área amarilla)
-    if (width > 0 && height > 0) {
-      ctx.fillStyle = "#FFD700" // Amarillo para el área de corte
+    // Dibujar los cortes optimizados
+    if (width > 0 && height > 0 && quantity > 0) {
+      // Algoritmo de optimización de cortes (guillotina)
+      // Primero intentamos colocar los cortes en horizontal y luego en vertical
+      const cuts = []
+      const remainingQuantity = quantity
 
-      // Calcular cuántos cortes caben en el vidrio (simplificado)
-      const maxCutsX = Math.floor(glassWidth / width)
-      const maxCutsY = Math.floor(glassHeight / height)
-      const maxCuts = maxCutsX * maxCutsY
+      // Margen entre cortes (para representar el espacio de corte)
+      const cutMargin = 2 * scale // 2mm de margen para el corte
 
-      // Limitar la cantidad de cortes a mostrar
-      const cutsToShow = Math.min(quantity, maxCuts)
+      // Calcular cuántos cortes caben en cada fila y columna
+      const horizontalCutsPerRow = Math.floor(glassWidth / width)
+      const verticalCutsPerColumn = Math.floor(glassHeight / height)
 
-      // Distribuir los cortes en filas y columnas
-      let cutsPlaced = 0
-      for (let row = 0; row < maxCutsY && cutsPlaced < cutsToShow; row++) {
-        for (let col = 0; col < maxCutsX && cutsPlaced < cutsToShow; col++) {
-          const cutX = startX + col * scaledWidth
-          const cutY = startY + row * scaledHeight
+      // Verificar si es mejor rotar los cortes (optimización)
+      const horizontalEfficiency = (horizontalCutsPerRow * width * height) / (glassWidth * glassHeight)
 
-          // Dibujar fondo del corte
-          ctx.fillRect(cutX, cutY, scaledWidth, scaledHeight)
+      // Intentar con rotación (intercambiar ancho y alto)
+      const horizontalCutsPerRowRotated = Math.floor(glassWidth / height)
+      const verticalCutsPerColumnRotated = Math.floor(glassHeight / width)
+      const rotatedEfficiency = (horizontalCutsPerRowRotated * width * height) / (glassWidth * glassHeight)
 
-          // Dibujar borde del corte
-          ctx.strokeStyle = "#000000"
-          ctx.lineWidth = 1
-          ctx.strokeRect(cutX, cutY, scaledWidth, scaledHeight)
+      // Decidir si rotar o no basado en la eficiencia
+      const shouldRotate = rotatedEfficiency > horizontalEfficiency
 
-          // Añadir líneas diagonales
-          ctx.strokeStyle = "rgba(0,0,0,0.3)"
-          ctx.beginPath()
-          ctx.moveTo(cutX, cutY)
-          ctx.lineTo(cutX + scaledWidth, cutY + scaledHeight)
-          ctx.stroke()
-          ctx.beginPath()
-          ctx.moveTo(cutX + scaledWidth, cutY)
-          ctx.lineTo(cutX, cutY + scaledHeight)
-          ctx.stroke()
+      // Usar los valores optimizados
+      const cutsPerRow = shouldRotate ? horizontalCutsPerRowRotated : horizontalCutsPerRow
+      const cutsPerColumn = shouldRotate ? verticalCutsPerColumnRotated : verticalCutsPerColumn
+      const actualWidth = shouldRotate ? height : width
+      const actualHeight = shouldRotate ? width : height
+      const scaledActualWidth = actualWidth * scale
+      const scaledActualHeight = actualHeight * scale
 
-          cutsPlaced++
+      // Calcular cuántas filas completas podemos llenar
+      const fullRows = Math.floor(remainingQuantity / cutsPerRow)
+      const remainingInLastRow = remainingQuantity % cutsPerRow
+
+      // Generar las posiciones de los cortes
+      let cutCount = 0
+
+      // Dibujar filas completas
+      for (let row = 0; row < fullRows && cutCount < quantity; row++) {
+        for (let col = 0; col < cutsPerRow && cutCount < quantity; col++) {
+          cuts.push({
+            x: startX + col * (scaledActualWidth + cutMargin),
+            y: startY + row * (scaledActualHeight + cutMargin),
+            width: scaledActualWidth,
+            height: scaledActualHeight,
+            rotated: shouldRotate,
+            id: cutCount + 1,
+          })
+          cutCount++
         }
       }
+
+      // Dibujar la última fila parcial
+      if (remainingInLastRow > 0) {
+        for (let col = 0; col < remainingInLastRow && cutCount < quantity; col++) {
+          cuts.push({
+            x: startX + col * (scaledActualWidth + cutMargin),
+            y: startY + fullRows * (scaledActualHeight + cutMargin),
+            width: scaledActualWidth,
+            height: scaledActualHeight,
+            rotated: shouldRotate,
+            id: cutCount + 1,
+          })
+          cutCount++
+        }
+      }
+
+      // Si aún quedan cortes por colocar y hay espacio en otra hoja
+      if (cutCount < quantity) {
+        // Indicar que se necesitarían más hojas
+        ctx.fillStyle = "#333333"
+        ctx.font = "bold 14px Arial"
+        ctx.textAlign = "center"
+        ctx.fillText(
+          `+ ${quantity - cutCount} cortes en hoja(s) adicional(es)`,
+          canvasWidth / 2,
+          startY + scaledGlassHeight + 40,
+        )
+      }
+
+      // Dibujar todos los cortes
+      cuts.forEach((cut) => {
+        // Dibujar fondo del corte
+        ctx.fillStyle = "rgba(255, 215, 0, 0.7)" // Amarillo semi-transparente
+        ctx.fillRect(cut.x, cut.y, cut.width, cut.height)
+
+        // Dibujar borde del corte
+        ctx.strokeStyle = "#000000"
+        ctx.lineWidth = 1
+        ctx.strokeRect(cut.x, cut.y, cut.width, cut.height)
+
+        // Añadir líneas diagonales
+        ctx.strokeStyle = "rgba(0,0,0,0.3)"
+        ctx.beginPath()
+        ctx.moveTo(cut.x, cut.y)
+        ctx.lineTo(cut.x + cut.width, cut.y + cut.height)
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.moveTo(cut.x + cut.width, cut.y)
+        ctx.lineTo(cut.x, cut.y + cut.height)
+        ctx.stroke()
+
+        // Añadir número e indicador de rotación
+        ctx.fillStyle = "#000000"
+        ctx.font = "bold 12px Arial"
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        ctx.fillText(`${cut.id}${cut.rotated ? "R" : ""}`, cut.x + cut.width / 2, cut.y + cut.height / 2)
+      })
+
+      // Mostrar información de optimización
+      const totalArea = (glassWidth * glassHeight) / 1000000 // en m²
+      const usedArea = (quantity * width * height) / 1000000 // en m²
+      const efficiency = (usedArea / totalArea) * 100
+
+      ctx.fillStyle = "#333333"
+      ctx.font = "12px Arial"
+      ctx.textAlign = "center"
+      ctx.fillText(
+        `Eficiencia: ${efficiency.toFixed(1)}% - ${cuts.length} cortes en esta hoja`,
+        canvasWidth / 2,
+        startY + scaledGlassHeight + 60,
+      )
     }
 
     // Dibujar información del vidrio
     ctx.fillStyle = "#000000"
     ctx.font = "bold 14px Arial"
     ctx.textAlign = "center"
-    ctx.fillText(`${glassType} (${glassWidth}mm x ${glassHeight}mm)`, canvasWidth / 2, startY - 15)
+    ctx.fillText(`${glassType}`, canvasWidth / 2, startY - 25)
+    ctx.font = "12px Arial"
+    ctx.fillText(`Hoja completa: ${glassWidth}mm x ${glassHeight}mm`, canvasWidth / 2, startY - 8)
 
     // Dibujar información del corte
     if (width > 0 && height > 0) {
@@ -125,17 +212,14 @@ export default function GlassCutVisualization({
 
   // Renderizar un canvas con dimensiones fijas
   return (
-    <div className="flex flex-col items-center bg-white p-4 rounded-lg border border-gray-200">
-      <h3 className="text-lg font-medium mb-2">Visualización de Corte</h3>
-      <div className="w-full bg-white rounded-lg overflow-hidden">
-        <canvas
-          ref={canvasRef}
-          width="500"
-          height="400"
-          className="border rounded mx-auto"
-          style={{ maxWidth: "100%" }}
-        />
-      </div>
+    <div className="w-full bg-white rounded-lg overflow-hidden">
+      <canvas
+        ref={canvasRef}
+        width="500"
+        height="400"
+        className="border rounded mx-auto"
+        style={{ maxWidth: "100%" }}
+      />
     </div>
   )
 }

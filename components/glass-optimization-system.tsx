@@ -15,23 +15,20 @@ import {
   Trash2,
   TrendingDown,
   Sparkles,
-  ShoppingCart,
   CheckCircle,
-  ArrowRight,
-  BarChart2,
-  Clock,
   Edit,
   RefreshCw,
+  ArrowLeft,
 } from "lucide-react"
 import { glassTypes } from "@/lib/glass-data"
 import { procesarPedidoNuevo, obtenerInformacionHojas, reiniciarSistemaOptimizacion } from "@/lib/integration"
-import OrderConfirmationDetails from "./order-confirmation-details"
 import type { OrderItem } from "@/lib/calculator"
 import GlassCutVisualization from "./glass-cut-visualization"
 import SavingsNotification from "./savings-notification"
 import SystemInfo from "./system-info"
 import OrderHistory from "./order-history"
 import { saveOrder, type SavedOrder } from "@/lib/order-history"
+import { canSellHalfSheet, calculateOptimizedPrice } from "@/lib/optimizer"
 
 export default function GlassOptimizationSystem() {
   const [selectedGlassType, setSelectedGlassType] = useState("")
@@ -53,21 +50,22 @@ export default function GlassOptimizationSystem() {
       area: number
       price: number
       totalPrice: number
-      sheets: number
+      fullSheets: number
+      halfSheets: number
       chargeableArea: number
       pricePerM2: number
       matchedGlassType: string | null
+      wastePercentage: number
     }[]
   >([])
   const [showOrderDetails, setShowOrderDetails] = useState(false)
   const [showSavingsCalculator, setShowSavingsCalculator] = useState(false)
-  const [cartItems, setCartItems] = useState<OrderItem[]>([])
-  const [showCartModal, setShowCartModal] = useState(false)
-  const [showSavingsNotification, setShowSavingsNotification] = useState(false)
   const [lastProcessedOrder, setLastProcessedOrder] = useState<OrderItem[]>([])
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null)
   const [showSystemInfo, setShowSystemInfo] = useState(false)
   const [showOrderHistory, setShowOrderHistory] = useState(false)
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [showSavingsNotification, setShowSavingsNotification] = useState(false)
 
   // Cargar información de hojas al iniciar
   useEffect(() => {
@@ -133,6 +131,12 @@ export default function GlassOptimizationSystem() {
   // Modificar la función calculateTotalPrice para agrupar por tipo de vidrio
   // y calcular un precio optimizado basado en precio por m²
   const calculateTotalPrice = () => {
+    if (orderItems.length === 0) {
+      setTotalPrice(0)
+      setOptimizedGlassSummary([])
+      return
+    }
+
     // Agrupar items por tipo de vidrio
     const itemsByType = orderItems.reduce((acc, item) => {
       if (!acc[item.glassType]) {
@@ -143,37 +147,40 @@ export default function GlassOptimizationSystem() {
     }, {})
 
     let total = 0
+    const summary = []
 
     // Calcular precio por tipo de vidrio
-    Object.entries(itemsByType).forEach(([glassTypeName, items]) => {
+    for (const [glassTypeName, items] of Object.entries(itemsByType)) {
       const glassType = glassTypes.find((glass) => glass.name === glassTypeName)
-      if (!glassType) return
 
-      // El precio ya está en precio por m²
-      const pricePerM2 = glassType.price
+      // Si no se encuentra el tipo de vidrio, continuar con el siguiente
+      if (!glassType) {
+        console.warn(`No se encontró el tipo de vidrio: ${glassTypeName}`)
+        continue
+      }
 
-      // Calcular área total de todos los cortes de este tipo
-      let totalCutArea = 0
-      items.forEach((item: any) => {
-        const cutArea = (item.width / 1000) * (item.height / 1000)
-        totalCutArea += cutArea * item.quantity
+      // Asegurarnos de que estamos pasando el array completo de orderItems
+      // y el tipo de vidrio correcto
+      const optimizationResult = calculateOptimizedPrice(orderItems, glassType)
+
+      total += optimizationResult.price
+
+      summary.push({
+        type: glassTypeName,
+        area: optimizationResult.usedArea,
+        price: glassType.price,
+        totalPrice: optimizationResult.price,
+        fullSheets: optimizationResult.fullSheets,
+        halfSheets: optimizationResult.halfSheets,
+        chargeableArea: optimizationResult.totalArea,
+        pricePerM2: glassType.price,
+        matchedGlassType: glassTypeName,
+        wastePercentage: optimizationResult.wastePercentage,
       })
-
-      // Área de una hoja completa en m²
-      const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
-
-      // Estimar número de hojas necesarias (aproximación)
-      const estimatedSheets = Math.ceil(totalCutArea / sheetArea)
-
-      // Cobrar hojas completas
-      const chargeableArea = estimatedSheets * sheetArea
-
-      // Precio total basado en área cobrable y precio por m²
-      const typePrice = chargeableArea * pricePerM2
-      total += typePrice
-    })
+    }
 
     setTotalPrice(total)
+    setOptimizedGlassSummary(summary)
 
     // Calcular también el precio sin optimización
     calculateNonOptimizedPrice()
@@ -181,15 +188,22 @@ export default function GlassOptimizationSystem() {
 
   // Función para normalizar nombres de tipos de vidrio para comparación
   const normalizeGlassType = (type: string): string => {
+    if (!type) return ""
     return type.toLowerCase().replace(/\s+/g, "").replace(/[+]/g, "mas").replace(/[()]/g, "")
   }
 
   // Función para encontrar el tipo de vidrio y su precio por m²
   const findGlassTypeAndPrice = (tipoVidrio) => {
+    if (!tipoVidrio) {
+      console.warn("Tipo de vidrio no especificado")
+      return { glassType: null, pricePerM2: 0, matchedGlassType: null }
+    }
+
     console.log(`Buscando tipo de vidrio: "${tipoVidrio}"`)
 
     // Normalizar el tipo de vidrio para búsqueda
     const normalizeGlassType = (type) => {
+      if (!type) return ""
       return type.toLowerCase().replace(/\s+/g, "").replace(/[+]/g, "mas").replace(/[()]/g, "").replace(/mm/g, "")
     }
 
@@ -260,105 +274,6 @@ export default function GlassOptimizationSystem() {
     }
   }
 
-  const calculateOptimizedPrice = () => {
-    if (!sheetInfo?.hojas || sheetInfo.hojas.length === 0) {
-      console.log("No hay hojas para calcular precio")
-      setTotalOptimizedPrice(0)
-      setOptimizedGlassSummary([])
-      return 0
-    }
-
-    console.log("Calculando precio optimizado para hojas:", sheetInfo.hojas)
-
-    // Agrupar hojas por tipo de vidrio
-    const hojasPorTipo = sheetInfo.hojas.reduce((acc, hoja) => {
-      if (!acc[hoja.tipoVidrio]) {
-        acc[hoja.tipoVidrio] = {
-          count: 0,
-          area: 0,
-          sheets: [],
-        }
-      }
-
-      // Área utilizada = área total - área restante
-      const areaUtilizada = (hoja.superficieTotal - hoja.superficieRestante) / 1000000 // Convertir a m²
-      const areaTotal = hoja.superficieTotal / 1000000 // Área total de la hoja en m²
-      const porcentajeUtilizado = areaUtilizada / areaTotal // Porcentaje de la hoja utilizado
-
-      acc[hoja.tipoVidrio].count += 1
-      acc[hoja.tipoVidrio].area += areaUtilizada
-      acc[hoja.tipoVidrio].sheets.push({
-        id: hoja.id,
-        areaTotal,
-        areaUtilizada,
-        porcentajeUtilizado,
-      })
-
-      return acc
-    }, {})
-
-    console.log("Hojas agrupadas por tipo:", hojasPorTipo)
-    console.log(
-      "Tipos de vidrio disponibles:",
-      glassTypes.map((g) => g.name),
-    )
-
-    // Calcular precio por tipo aplicando las reglas de cobro mínimo
-    const summary = Object.entries(hojasPorTipo).map(([tipo, datos]) => {
-      // Buscar el tipo de vidrio y su precio
-      const { glassType, pricePerM2, matchedGlassType } = findGlassTypeAndPrice(tipo)
-
-      console.log(`Tipo: "${tipo}", Coincidencia: "${matchedGlassType || "No encontrado"}"`)
-      console.log(`Precio por m²: ${pricePerM2.toFixed(2)}`)
-
-      if (!glassType) {
-        console.error(`No se encontró coincidencia para el tipo de vidrio: ${tipo}`)
-        return {
-          type: tipo,
-          area: datos.area,
-          price: 0,
-          totalPrice: 0,
-          sheets: datos.count,
-          chargeableArea: 0,
-          pricePerM2: 0,
-          matchedGlassType: null,
-        }
-      }
-
-      // Calcular área cobrable según las reglas (cada hoja se cobra completa)
-      let chargeableArea = 0
-      datos.sheets.forEach((sheet) => {
-        // Cobrar hoja completa
-        chargeableArea += sheet.areaTotal
-      })
-
-      // Calcular precio total basado en área cobrable y precio por m²
-      const totalPrice = chargeableArea * pricePerM2
-
-      console.log(`Hojas físicas: ${datos.count}, Área cobrable: ${chargeableArea.toFixed(2)} m²`)
-      console.log(`Precio total: ${totalPrice.toFixed(2)}`)
-
-      return {
-        type: tipo,
-        area: datos.area,
-        price: pricePerM2, // Precio por m²
-        totalPrice: totalPrice,
-        sheets: datos.count,
-        chargeableArea: chargeableArea,
-        pricePerM2: pricePerM2,
-        matchedGlassType: matchedGlassType,
-      }
-    })
-
-    console.log("Resumen calculado:", summary)
-
-    setOptimizedGlassSummary(summary)
-    const total = summary.reduce((sum, item) => sum + item.totalPrice, 0)
-    console.log("Precio total calculado:", total)
-    setTotalOptimizedPrice(total)
-    return total
-  }
-
   const handleProcessOrder = async () => {
     if (orderItems.length === 0) {
       setError("No hay ítems en el pedido")
@@ -382,7 +297,8 @@ export default function GlassOptimizationSystem() {
       // Esperar un poco antes de calcular precio optimizado
       setTimeout(() => {
         // Calcular el precio optimizado
-        const optimizedPrice = calculateOptimizedPrice()
+        calculateTotalPrice()
+        const optimizedPrice = totalPrice
 
         // Asegurarnos de que tenemos los valores correctos para mostrar
         console.log("Precio sin optimización:", currentNonOptimizedPrice)
@@ -392,73 +308,37 @@ export default function GlassOptimizationSystem() {
         const savedOrder = saveOrder(orderItems, currentNonOptimizedPrice, optimizedPrice)
         setCurrentOrderId(savedOrder.id)
 
-        // Mostrar notificación de ahorro con los valores correctos
-        setNonOptimizedPrice(currentNonOptimizedPrice) // Asegurar que mantenemos el precio sin optimización
-
         // Mostrar detalles del pedido
         setShowOrderDetails(true)
-
-        // Mostrar la notificación de ahorro después de un breve retraso
-        setTimeout(() => {
-          setShowSavingsNotification(true)
-        }, 500)
+        setNonOptimizedPrice(currentNonOptimizedPrice)
       }, 500)
-
-      // Limpiar pedido actual
-      setOrderItems([])
-      setTotalPrice(0)
-      setShowSavingsCalculator(false)
     } catch (err) {
       console.error("Error al procesar el pedido:", err)
       setError("Ocurrió un error al procesar el pedido")
     }
   }
 
-  // Función para modificar un pedido existente
-  const handleModifyOrder = () => {
-    // Restaurar los items del último pedido procesado
-    setOrderItems([...lastProcessedOrder])
+  const handleConfirmOrder = () => {
+    // Aquí iría la lógica para guardar en el backend
+    // Y disparar el contacto por WhatsApp
 
-    // Mostrar la calculadora de ahorro
-    setShowSavingsCalculator(true)
+    // Generar el texto para WhatsApp con los detalles del pedido
+    const whatsappText = encodeURIComponent(
+      `Hola, quiero confirmar mi pedido de vidrios:\n\n${orderItems
+        .map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}mm x ${item.height}mm)`)
+        .join("\n")}\n\nPrecio optimizado: $${totalPrice.toLocaleString("es-AR", {
+        minimumFractionDigits: 2,
+      })}`,
+    )
 
-    // Ocultar los detalles del pedido y volver a la pantalla principal
+    // Abrir WhatsApp con el mensaje predefinido
+    window.open(`https://wa.me/5491100000000?text=${whatsappText}`, "_blank")
+
+    // Mostrar mensaje de éxito
+    setShowSuccessMessage(true)
+
+    // Ocultar detalles del pedido
     setShowOrderDetails(false)
-
-    // Calcular precios
-    setTimeout(() => {
-      calculateTotalPrice()
-    }, 100)
-
-    // Mostrar mensaje informativo
-    setError("")
-    setTimeout(() => {
-      setError("Pedido cargado para modificación. Realice los cambios necesarios y procese nuevamente.")
-    }, 200)
-  }
-
-  // Función para editar un pedido del historial
-  const handleEditHistoryOrder = (order: SavedOrder) => {
-    // Cargar los items del pedido seleccionado
-    setOrderItems([...order.items])
-    setCurrentOrderId(order.id)
-
-    // Mostrar la calculadora de ahorro
-    setShowSavingsCalculator(true)
-
-    // Ocultar el historial y volver a la pantalla principal
-    setShowOrderHistory(false)
-
-    // Calcular precios
-    setTimeout(() => {
-      calculateTotalPrice()
-    }, 100)
-
-    // Mostrar mensaje informativo
-    setError("")
-    setTimeout(() => {
-      setError(`Editando pedido ${order.id}. Realice los cambios necesarios y procese nuevamente.`)
-    }, 200)
   }
 
   // Eliminar un item del pedido
@@ -508,25 +388,6 @@ export default function GlassOptimizationSystem() {
         setError("Sistema reiniciado correctamente. Puede comenzar un nuevo pedido.")
       }, 100)
     }
-  }
-
-  // Agregar al carrito
-  const handleAddToCart = () => {
-    if (orderItems.length === 0) {
-      setError("No hay ítems para agregar al carrito")
-      return
-    }
-
-    // Agregar items al carrito
-    setCartItems([...cartItems, ...orderItems])
-
-    // Mostrar mensaje de confirmación
-    alert(`¡${orderItems.length} productos agregados al carrito!`)
-
-    // Limpiar pedido actual
-    setOrderItems([])
-    setTotalPrice(0)
-    setShowSavingsCalculator(false)
   }
 
   // Función para agregar un nuevo item al pedido
@@ -588,6 +449,40 @@ export default function GlassOptimizationSystem() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
+  // Función para cambiar el tipo de vidrio de un ítem existente
+  const handleChangeGlassType = (id: string, newGlassType: string) => {
+    const updatedItems = orderItems.map((item) => {
+      if (item.id === id) {
+        return { ...item, glassType: newGlassType }
+      }
+      return item
+    })
+
+    setOrderItems(updatedItems)
+
+    // Recalcular precios
+    setTimeout(() => {
+      calculateTotalPrice()
+    }, 100)
+  }
+
+  const handleEditHistoryOrder = (order: SavedOrder) => {
+    // Implementar la lógica para editar un pedido del historial
+    console.log("Editar pedido del historial:", order)
+
+    // Cargar los items del pedido en el estado actual
+    setOrderItems(order.items)
+
+    // Calcular el precio total
+    calculateTotalPrice()
+
+    // Mostrar la calculadora de ahorros
+    setShowSavingsCalculator(true)
+
+    // Hacer scroll hacia arriba para mostrar el formulario
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
   // Si se está mostrando la información del sistema
   if (showSystemInfo) {
     return (
@@ -607,20 +502,220 @@ export default function GlassOptimizationSystem() {
     return <OrderHistory onBack={() => setShowOrderHistory(false)} onEditOrder={handleEditHistoryOrder} />
   }
 
-  // Si se está mostrando los detalles del pedido, renderizar el componente OrderConfirmationDetails
+  if (showSuccessMessage) {
+    return (
+      <Card className="shadow-lg">
+        <CardHeader className="bg-green-50 border-b border-green-100">
+          <div className="flex items-center">
+            <CheckCircle className="h-6 w-6 text-green-600 mr-2" />
+            <CardTitle>¡Listo! Vamos a contactarte para cerrar los detalles.</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="space-y-6">
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <p className="text-green-800">
+                Hemos recibido tu pedido correctamente. En breve nos pondremos en contacto contigo por WhatsApp para
+                confirmar los detalles.
+              </p>
+            </div>
+
+            <div className="flex justify-center">
+              <Button
+                onClick={() => {
+                  // Reiniciar el sistema para un nuevo pedido
+                  setShowSuccessMessage(false)
+                  setOrderItems([])
+                  setTotalPrice(0)
+                  setShowSavingsCalculator(false)
+                  setSelectedGlassType("")
+                  setWidth("")
+                  setHeight("")
+                  setQuantity("1")
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Realizar otro pedido
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   if (showOrderDetails && optimizationResult) {
     return (
-      <OrderConfirmationDetails
-        optimizationResult={optimizationResult}
-        onBack={() => {
-          setShowOrderDetails(false)
-          // Mostrar la información del sistema después de procesar un pedido
-          setShowSystemInfo(true)
-        }}
-        originalPrice={nonOptimizedPrice}
-        optimizedPrice={totalOptimizedPrice}
-        onModifyOrder={handleModifyOrder}
-      />
+      <Card className="shadow-lg">
+        <CardHeader className="bg-blue-50 border-b border-blue-100">
+          <div className="flex items-center">
+            <CheckCircle className="h-6 w-6 text-blue-600 mr-2" />
+            <CardTitle>Revisión del Pedido</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="space-y-6">
+            {/* Sección de ahorro destacada */}
+            {nonOptimizedPrice > 0 && totalPrice > 0 && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                <h3 className="font-medium text-green-800 mb-4 flex items-center">
+                  <TrendingDown className="h-5 w-5 mr-2 text-green-600" />
+                  Ahorro con Optimización
+                </h3>
+
+                <div className="space-y-3">
+                  {/* Versión móvil - Apilada verticalmente */}
+                  <div className="sm:hidden space-y-3">
+                    <div className="bg-white p-3 rounded-md border border-gray-100 flex justify-between items-center">
+                      <p className="text-sm text-gray-500">Sin optimización:</p>
+                      <p className="font-medium line-through text-red-500">
+                        ${nonOptimizedPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-md border border-gray-100 flex justify-between items-center">
+                      <p className="text-sm text-gray-500">Con optimización:</p>
+                      <p className="font-medium text-green-600">
+                        ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+
+                    <div className="bg-green-100 p-3 rounded-md border border-green-200">
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-green-700">Ahorro total:</p>
+                        <p className="font-bold text-green-700">
+                          ${(nonOptimizedPrice - totalPrice).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <div className="text-right text-sm text-green-700 mt-1">
+                        (
+                        {nonOptimizedPrice > 0
+                          ? (((nonOptimizedPrice - totalPrice) / nonOptimizedPrice) * 100).toFixed(1)
+                          : 0}
+                        %)
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Versión desktop - En columnas */}
+                  <div className="hidden sm:grid grid-cols-3 gap-4">
+                    <div className="bg-white p-3 rounded-md border border-gray-100">
+                      <p className="text-sm text-gray-500">Sin optimización</p>
+                      <p className="font-medium line-through text-red-500">
+                        ${nonOptimizedPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-md border border-gray-100">
+                      <p className="text-sm text-gray-500">Con optimización</p>
+                      <p className="font-medium text-green-600">
+                        ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+
+                    <div className="bg-green-100 p-3 rounded-md border border-green-200">
+                      <p className="text-sm text-green-700">Ahorro total</p>
+                      <p className="font-bold text-green-700">
+                        ${(nonOptimizedPrice - totalPrice).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        <span className="text-sm font-normal ml-1">
+                          (
+                          {nonOptimizedPrice > 0
+                            ? (((nonOptimizedPrice - totalPrice) / nonOptimizedPrice) * 100).toFixed(1)
+                            : 0}
+                          %)
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <h3 className="font-medium mb-3">Detalle de Cortes</h3>
+
+              {/* Tabla para pantallas medianas y grandes */}
+              <div className="hidden sm:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tipo de Vidrio</TableHead>
+                      <TableHead>Dimensiones</TableHead>
+                      <TableHead>Cantidad</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orderItems.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.glassType}</TableCell>
+                        <TableCell>
+                          {item.width}mm x {item.height}mm
+                        </TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Tarjetas para móviles */}
+              <div className="space-y-3 sm:hidden">
+                {orderItems.map((item) => (
+                  <div key={item.id} className="bg-white p-3 rounded-md border border-gray-200">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="text-sm text-gray-500">Tipo:</div>
+                      <div className="text-sm font-medium">{item.glassType}</div>
+
+                      <div className="text-sm text-gray-500">Dimensiones:</div>
+                      <div className="text-sm font-medium">
+                        {item.width}mm x {item.height}mm
+                      </div>
+
+                      <div className="text-sm text-gray-500">Cantidad:</div>
+                      <div className="text-sm font-medium">{item.quantity}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              {/* Resumen económico destacado - Ahora a ancho completo en móvil */}
+              <div className="bg-green-50 p-4 rounded-md border border-green-200 w-full">
+                <div className="flex flex-col sm:flex-row justify-between items-center">
+                  <p className="text-base text-green-700 font-medium mb-2 sm:mb-0">Total a pagar:</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Botones de acción - Apilados en móvil, lado a lado en desktop */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowOrderDetails(false)}
+                  className="h-12 text-base order-2 sm:order-1"
+                >
+                  <ArrowLeft className="mr-2 h-5 w-5" /> Volver y modificar
+                </Button>
+
+                <Button
+                  onClick={handleConfirmOrder}
+                  className="bg-green-600 hover:bg-green-700 h-12 text-base order-1 sm:order-2"
+                >
+                  <CheckCircle className="mr-2 h-5 w-5" /> Confirmar pedido
+                </Button>
+              </div>
+
+              {/* Texto informativo */}
+              <p className="text-sm text-gray-500 text-center">
+                Te vamos a contactar por WhatsApp para finalizar el pedido.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -681,35 +776,6 @@ export default function GlassOptimizationSystem() {
               <RefreshCw className="h-5 w-5" />
               <span className="hidden sm:inline">Reiniciar</span>
             </Button>
-            <Button
-              variant="outline"
-              className="flex items-center gap-2 bg-white hover:bg-blue-50"
-              onClick={() => setShowOrderHistory(true)}
-            >
-              <Clock className="h-5 w-5" />
-              <span className="hidden sm:inline">Historial</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="flex items-center gap-2 bg-white hover:bg-blue-50"
-              onClick={() => setShowSystemInfo(true)}
-            >
-              <BarChart2 className="h-5 w-5" />
-              <span className="hidden sm:inline">Información</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="flex items-center gap-2 bg-white hover:bg-blue-50"
-              onClick={() => setShowCartModal(true)}
-            >
-              <ShoppingCart className="h-5 w-5" />
-              <span className="hidden sm:inline">Carrito</span>
-              {cartItems.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                  {cartItems.length}
-                </span>
-              )}
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pt-6">
@@ -728,111 +794,234 @@ export default function GlassOptimizationSystem() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {/* COLUMNA IZQUIERDA - Formulario de entrada */}
             <div className="space-y-3 sm:space-y-4">
-              <div className="bg-blue-50 p-3 rounded-md mb-2 sm:mb-4 text-sm text-blue-700 flex items-start">
-                <Info className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-                <p>
-                  Seleccione un tipo de vidrio, ingrese las medidas y la cantidad deseada. Agregue todos los cortes
-                  necesarios y luego procese el pedido para optimizar.
+              <div className="bg-blue-50 p-4 rounded-md mb-4 text-blue-700">
+                <h3 className="text-lg font-medium mb-2 flex items-center">
+                  <Info className="h-5 w-5 mr-2" /> ¿Qué necesitás cortar?
+                </h3>
+                <p className="text-sm">
+                  Elegí el tipo de vidrio, poné las medidas y la cantidad. Podés cargar varios cortes y después procesar
+                  el pedido para optimizar al máximo los materiales.
                 </p>
               </div>
 
-              <div>
-                <Label htmlFor="glass-type" className="mb-1 block">
-                  Tipo de Vidrio
-                </Label>
-                <Select
-                  value={selectedGlassType}
-                  onValueChange={(value) => {
-                    setSelectedGlassType(value)
-                    // Buscar el tipo de vidrio seleccionado
-                    const selectedGlass = glassTypes.find((glass) => glass.name === value)
-                    if (selectedGlass) {
-                      // Autocompletar con las dimensiones de la hoja
-                      setWidth(selectedGlass.width.toString())
-                      setHeight(selectedGlass.height.toString())
-                    }
-                  }}
-                >
-                  <SelectTrigger id="glass-type" className="w-full">
-                    <SelectValue placeholder="Seleccione un tipo de vidrio" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[40vh]">
-                    {glassTypes.map((glass) => (
-                      <SelectItem key={glass.name} value={glass.name}>
-                        {glass.name} (${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 2 })}/m²)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <Label htmlFor="width" className="mb-1 block">
-                    Ancho (mm)
-                  </Label>
-                  <Input
-                    id="width"
-                    type="number"
-                    value={width}
-                    onChange={(e) => setWidth(e.target.value)}
-                    placeholder="Ancho"
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="height" className="mb-1 block">
-                    Alto (mm)
-                  </Label>
-                  <Input
-                    id="height"
-                    type="number"
-                    value={height}
-                    onChange={(e) => setHeight(e.target.value)}
-                    placeholder="Alto"
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="quantity" className="mb-1 block">
-                  Cantidad
-                </Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  placeholder="Cantidad"
-                  min="1"
-                  className="w-full"
-                />
-              </div>
-
-              {currentCutPrice > 0 && (
-                <div className="bg-green-50 p-3 rounded-md border border-green-200">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-green-800">Precio estimado:</span>
-                    <span className="font-bold text-green-800">
-                      $
-                      {currentCutPrice.toLocaleString("es-AR", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </span>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center mb-3">
+                  <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
+                    1
                   </div>
+                  <h3 className="font-medium">Cargá tus cortes</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="glass-type" className="mb-1 block">
+                      Tipo de Vidrio
+                    </Label>
+                    <Select
+                      value={selectedGlassType}
+                      onValueChange={(value) => {
+                        setSelectedGlassType(value)
+
+                        // Solo autocompletar dimensiones si están vacías
+                        if (!width && !height) {
+                          // Buscar el tipo de vidrio seleccionado
+                          const selectedGlass = glassTypes.find((glass) => glass.name === value)
+                          if (selectedGlass) {
+                            // Autocompletar con las dimensiones de la hoja solo si no hay valores
+                            setWidth(selectedGlass.width.toString())
+                            setHeight(selectedGlass.height.toString())
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="glass-type" className="w-full">
+                        <SelectValue placeholder="Seleccione un tipo de vidrio" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[40vh]">
+                        {glassTypes.map((glass) => (
+                          <SelectItem key={glass.name} value={glass.name}>
+                            {glass.name}
+                            {canSellHalfSheet(glass.name) && " (disponible por media hoja)"}
+                            (${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 2 })}/m²)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="mb-1 block">Medidas (mm)</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="flex items-center">
+                          <span className="text-xs text-gray-500 mr-2">Ancho</span>
+                          <Input
+                            id="width"
+                            type="number"
+                            value={width}
+                            onChange={(e) => setWidth(e.target.value)}
+                            placeholder="Ancho"
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center">
+                          <span className="text-xs text-gray-500 mr-2">Alto</span>
+                          <Input
+                            id="height"
+                            type="number"
+                            value={height}
+                            onChange={(e) => setHeight(e.target.value)}
+                            placeholder="Alto"
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedGlassType && (
+                    <div className="flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const selectedGlass = glassTypes.find((glass) => glass.name === selectedGlassType)
+                          if (selectedGlass) {
+                            setWidth(selectedGlass.width.toString())
+                            setHeight(selectedGlass.height.toString())
+                          }
+                        }}
+                        className="text-xs"
+                      >
+                        Usar dimensiones de hoja completa
+                      </Button>
+                    </div>
+                  )}
+
+                  <div>
+                    <Label htmlFor="quantity" className="mb-1 block">
+                      Cantidad
+                    </Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      placeholder="Cantidad"
+                      min="1"
+                      className="w-full"
+                    />
+                  </div>
+
+                  {selectedGlassTypeInfo && width && height && (
+                    <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                      <div className="flex items-center">
+                        <Info className="h-5 w-5 mr-2 text-blue-600 flex-shrink-0" />
+                        <p className="text-sm text-blue-700">
+                          Vamos a calcular el mejor precio para vos cuando proceses el pedido.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button onClick={handleAddToOrder} className="w-full bg-green-600 hover:bg-green-700">
+                    <Plus className="mr-2 h-4 w-4" /> Cargar corte
+                  </Button>
+                </div>
+              </div>
+
+              {/* Visualización del corte - Ahora en la columna izquierda */}
+              {selectedGlassType && (
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-medium mb-2 flex items-center justify-between">
+                    <span>Visualización de Corte</span>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Vista previa</span>
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    📐 Así se ve el vidrio que estás cargando. A mayor precisión, mayor optimización.
+                  </p>
+                  <GlassCutVisualization
+                    width={Number(width) || 0}
+                    height={Number(height) || 0}
+                    glassType={selectedGlassType || "Laminado 3+3 Incoloro"}
+                    glassWidth={glassWidth || 3600}
+                    glassHeight={glassHeight || 2500}
+                    quantity={Number(quantity) || 1}
+                  />
                 </div>
               )}
 
-              <Button onClick={handleAddToOrder} className="w-full">
-                <Plus className="mr-2 h-4 w-4" /> Agregar al Pedido
-              </Button>
+              {/* Calculadora de Ahorro y Desperdicio */}
+              {showSavingsCalculator && (
+                <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                  <h3 className="font-semibold text-green-800 mb-3 flex items-center">
+                    <Sparkles className="h-5 w-5 mr-2 text-green-600" />
+                    Calculadora de Ahorro
+                  </h3>
 
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700">Precio sin optimización:</span>
+                      <span className="line-through text-red-500">
+                        ${nonOptimizedPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between font-bold">
+                      <span className="text-gray-800">Tu precio optimizado:</span>
+                      <span className="text-green-600">
+                        ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+
+                    {savings > 0 ? (
+                      <div className="bg-white p-3 rounded-md flex items-center">
+                        <div className="bg-green-100 p-2 rounded-full mr-3 flex-shrink-0">
+                          <TrendingDown className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-green-800">
+                            ¡Estás ahorrando ${savings.toLocaleString("es-AR", { minimumFractionDigits: 2 })}!
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white p-3 rounded-md flex items-center">
+                        <div className="bg-blue-100 p-2 rounded-full mr-3 flex-shrink-0">
+                          <Info className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-blue-800">
+                            Este corte no genera ahorro por ahora, pero sigue siendo el mejor precio.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-sm text-gray-500">
+                      Este cálculo es una estimación basada en el precio por m² del vidrio. El ahorro real puede variar
+                      según la distribución final de los cortes.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* COLUMNA DERECHA - Revisión y procesamiento */}
+            <div className="space-y-4">
               {orderItems.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="font-medium mb-2">Items en el Pedido</h3>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-3">
+                    <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
+                      2
+                    </div>
+                    <h3 className="font-medium">Revisá tus cortes</h3>
+                  </div>
+
                   <div className="bg-gray-50 rounded-md p-2 overflow-x-auto">
                     <Table>
                       <TableHeader>
@@ -848,22 +1037,54 @@ export default function GlassOptimizationSystem() {
                         {orderItems.map((item) => {
                           const glassType = glassTypes.find((glass) => glass.name === item.glassType)
 
-                          // Mostrar precio estimado por ítem (basado en el área)
+                          // Buscar el precio optimizado para este tipo de vidrio
+                          const optimizedItem = optimizedGlassSummary.find((summary) => summary.type === item.glassType)
+
+                          // Calcular el precio optimizado por ítem
                           let price = 0
-                          if (glassType) {
-                            // El precio ya está en precio por m²
+                          if (glassType && optimizedItem) {
+                            // Usar el precio optimizado proporcional a este ítem
+                            const itemArea = (item.width / 1000) * (item.height / 1000) * item.quantity
+                            const typeArea = optimizedGlassSummary
+                              .filter((summary) => summary.type === item.glassType)
+                              .reduce((total, summary) => total + summary.area, 0)
+
+                            // Calcular precio proporcional al área
+                            if (typeArea > 0) {
+                              price = (itemArea / typeArea) * optimizedItem.totalPrice
+                            } else {
+                              // Fallback al cálculo original si no hay área
+                              const pricePerM2 = glassType.price
+                              const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
+                              price = sheetArea * pricePerM2 * item.quantity
+                            }
+                          } else if (glassType) {
+                            // Fallback al cálculo original si no hay optimización
                             const pricePerM2 = glassType.price
-
-                            // Área de una hoja completa en m²
                             const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
-
-                            // Cobrar hoja completa por cada corte
                             price = sheetArea * pricePerM2 * item.quantity
                           }
 
                           return (
                             <TableRow key={item.id}>
-                              <TableCell className="py-2 whitespace-nowrap">{item.glassType}</TableCell>
+                              <TableCell className="py-2 whitespace-nowrap">
+                                <Select
+                                  value={item.glassType}
+                                  onValueChange={(value) => handleChangeGlassType(item.id, value)}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue>{item.glassType}</SelectValue>
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {glassTypes.map((glass) => (
+                                      <SelectItem key={glass.name} value={glass.name}>
+                                        {glass.name}
+                                        {canSellHalfSheet(glass.name) && " (½)"}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
                               <TableCell className="py-2 whitespace-nowrap">
                                 {item.width}x{item.height}mm
                               </TableCell>
@@ -900,80 +1121,39 @@ export default function GlassOptimizationSystem() {
                     </Table>
                   </div>
 
-                  {/* Calculadora de Ahorro y Desperdicio */}
-                  {showSavingsCalculator && (
-                    <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
-                      <h3 className="font-semibold text-green-800 mb-3 flex items-center">
-                        <Sparkles className="h-5 w-5 mr-2 text-green-600" />
-                        Calculadora de Ahorro
-                      </h3>
-
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-700">Precio sin optimización:</span>
-                          <span className="line-through text-red-500">
-                            ${nonOptimizedPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between font-bold">
-                          <span className="text-gray-800">Tu precio optimizado:</span>
-                          <span className="text-green-600">
-                            ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
-
-                        <div className="bg-white p-3 rounded-md flex items-center">
-                          <div className="bg-green-100 p-2 rounded-full mr-3 flex-shrink-0">
-                            <TrendingDown className="h-5 w-5 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-green-800">
-                              ¡Estás ahorrando ${savings.toLocaleString("es-AR", { minimumFractionDigits: 2 })}!
-                            </p>
-                          </div>
-                        </div>
-
-                        <p className="text-sm text-gray-500">
-                          Este cálculo es una estimación basada en el precio por m² del vidrio. El ahorro real puede
-                          variar.
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                  <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-100">
+                    <p className="text-blue-700 text-sm flex items-center">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Tenés {orderItems.length} corte{orderItems.length !== 1 ? "s" : ""}{" "}
+                      {orderItems.length > 1 ? "listos" : "listo"} para procesar. ¿Querés avanzar?
+                    </p>
+                  </div>
                 </div>
               )}
-            </div>
 
-            {/* Segunda columna para la visualización */}
-            <div className="flex flex-col">
-              <GlassCutVisualization
-                width={Number(width) || 0}
-                height={Number(height) || 0}
-                glassType={selectedGlassType || "Laminado 3+3 Incoloro"}
-                glassWidth={glassWidth || 3600}
-                glassHeight={glassHeight || 2500}
-                quantity={Number(quantity) || 1}
-              />
-
-              {/* Botones de acción destacados */}
               {orderItems.length > 0 && (
-                <div className="mt-4 flex flex-col gap-3">
-                  <Button
-                    onClick={handleAddToCart}
-                    className="w-full py-6 text-lg bg-blue-600 hover:bg-blue-700 shadow-md"
-                  >
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    Agregar al Carrito
-                  </Button>
-                  <Button
-                    onClick={handleProcessOrder}
-                    className="w-full py-6 text-lg bg-green-600 hover:bg-green-700 shadow-md"
-                    disabled={orderItems.length === 0}
-                  >
-                    <CheckCircle className="mr-2 h-5 w-5" />
-                    Procesar Pedido
-                  </Button>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-3">
+                    <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
+                      3
+                    </div>
+                    <h3 className="font-medium">Procesá tu pedido</h3>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-4">
+                    Al continuar, vamos a calcular la mejor distribución y el precio optimizado de tu pedido.
+                  </p>
+
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      onClick={handleProcessOrder}
+                      className="w-full py-4 text-lg bg-green-600 hover:bg-green-700 shadow-md"
+                      disabled={orderItems.length === 0}
+                    >
+                      <RefreshCw className="mr-2 h-5 w-5" />
+                      Procesar cortes y calcular precio
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -990,61 +1170,18 @@ export default function GlassOptimizationSystem() {
               </span>
             </div>
             <div className="flex gap-3 w-full sm:w-auto">
-              <Button onClick={handleAddToCart} className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700">
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Agregar al Carrito
-              </Button>
               <Button
                 onClick={handleProcessOrder}
                 className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
                 disabled={orderItems.length === 0}
               >
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Procesar Pedido
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Procesar cortes y calcular precio
               </Button>
             </div>
           </CardFooter>
         )}
       </Card>
-
-      {optimizedGlassSummary.length > 0 && (
-        <Card className="shadow-lg mt-6">
-          <CardHeader>
-            <CardTitle>Resumen de Optimización</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tipo de Vidrio</TableHead>
-                  <TableHead>Área Utilizada (m²)</TableHead>
-                  <TableHead>Hojas Físicas</TableHead>
-                  <TableHead>Área Cobrable (m²)</TableHead>
-                  <TableHead>Precio x m²</TableHead>
-                  <TableHead>Precio Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {optimizedGlassSummary.map((item) => (
-                  <TableRow key={item.type}>
-                    <TableCell>{item.type}</TableCell>
-                    <TableCell>{item.area.toFixed(2)}</TableCell>
-                    <TableCell>{item.sheets}</TableCell>
-                    <TableCell>{item.chargeableArea.toFixed(2)}</TableCell>
-                    <TableCell>${item.pricePerM2.toFixed(2)}</TableCell>
-                    <TableCell>${item.totalPrice.toFixed(2)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="mt-4 flex justify-end">
-              <span className="font-semibold">
-                Precio Total Optimizado: ${totalOptimizedPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Notificación de ahorro */}
       {showSavingsNotification && (
