@@ -49,6 +49,6 @@ next-env.d.ts
 logs
 *.log
 
-# Archivos temporales
+# Archivos temporaless
 *.tmp
 *.temp
