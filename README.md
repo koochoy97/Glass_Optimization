@@ -1,30 +1,60 @@
-# Moneda conversor
+... shell ...
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+Perfecto! Ahora tienes una aplicación completa de optimización de vidrios lista para ejecutar. He organizado todo el código con:
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/gonzalomalfonso-gmailcoms-projects/v0-moneda-conversor)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/nOtdo0F3NQL)
+## ✅ **Estructura completa de archivos:**
 
-## Overview
+### **Configuración del proyecto:**
+- `package.json` - Con todas las dependencias necesarias
+- `tsconfig.json` - Configuración de TypeScript
+- `next.config.js` - Configuración de Next.js
+- `tailwind.config.js` - Configuración de Tailwind CSS
+- `postcss.config.js` - Configuración de PostCSS
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+### **Componentes UI (shadcn/ui):**
+- Todos los componentes de UI necesarios están incluidos
+- `button`, `card`, `input`, `label`, `select`, `table`, `alert`, `badge`
 
-## Deployment
+### **Lógica de negocio:**
+- `lib/glass-data.ts` - Base de datos de tipos de vidrio con precios
+- `lib/calculator.ts` - Funciones de cálculo de precios
+- `lib/optimizer.ts` - Algoritmos de optimización de cortes
+- `lib/integration.ts` - Simulación de integración con sistemas externos
+- `lib/order-history.ts` - Gestión del historial de pedidos
 
-Your project is live at:
+### **Componentes principales:**
+- `glass-optimization-system.tsx` - Componente principal del sistema
+- `glass-cut-visualization.tsx` - Visualización de cortes en canvas
+- `savings-notification.tsx` - Notificación de ahorros con confetti
+- `system-info.tsx` - Información del sistema
+- `order-history.tsx` - Historial de pedidos
 
-**[https://vercel.com/gonzalomalfonso-gmailcoms-projects/v0-moneda-conversor](https://vercel.com/gonzalomalfonso-gmailcoms-projects/v0-moneda-conversor)**
+## 🚀 **Para ejecutar la aplicación:**
 
-## Build your app
+1. **Instalar dependencias:**
+\`\`\`bash
+npm install
+\`\`\`
 
-Continue building your app on:
+2. **Ejecutar en desarrollo:**
+\`\`\`bash
+npm run dev
+\`\`\`
 
-**[https://v0.dev/chat/projects/nOtdo0F3NQL](https://v0.dev/chat/projects/nOtdo0F3NQL)**
+3. **Abrir en el navegador:**
+\`\`\`
+http://localhost:3000
+\`\`\`
 
-## How It Works
+## 📱 **Características incluidas:**
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+- ✅ **Responsive design** - Funciona en móvil y desktop
+- ✅ **Sistema de optimización** - Calcula el mejor uso de materiales
+- ✅ **Visualización de cortes** - Canvas interactivo
+- ✅ **Calculadora de ahorros** - Muestra el ahorro en tiempo real
+- ✅ **Historial de pedidos** - Guarda y permite editar pedidos
+- ✅ **Integración WhatsApp** - Envía pedidos por WhatsApp
+- ✅ **Notificaciones animadas** - Con confetti y efectos visuales
+- ✅ **Base de datos de vidrios** - 45+ tipos de vidrio con precios reales
+
+La aplicación está completamente funcional y lista para usar. ¡Puedes empezar a cargar cortes de vidrio y ver cómo optimiza los materiales para ahorrar dinero!
