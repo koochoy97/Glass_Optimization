@@ -30,6 +30,29 @@ import OrderHistory from "./order-history"
 import { saveOrder, type SavedOrder } from "@/lib/order-history"
 import { canSellHalfSheet, calculateOptimizedPrice } from "@/lib/optimizer"
 
+// Función para enviar datos al webhook
+async function sendToWebhook(orderItems: OrderItem[], origen: string) {
+  try {
+    const response = await fetch("https://n8n.viprou.com/webhook/103b1e30-807f-4bba-a65f-9698f0c23d2c", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ orderItems, origen: origen }), // enviamos orderItems en el body
+    })
+
+    if (!response.ok) {
+      throw new Error(`Error en la petición: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    return data // opcional, para manejar la respuesta del webhook
+  } catch (error) {
+    console.error("Error enviando orderItems:", error)
+    throw error
+  }
+}
+
 export default function GlassOptimizationSystem() {
   const [selectedGlassType, setSelectedGlassType] = useState("")
   const [width, setWidth] = useState("")
@@ -70,6 +93,8 @@ export default function GlassOptimizationSystem() {
   // Cargar información de hojas al iniciar
   useEffect(() => {
     updateSheetInfo()
+    // Enviar webhook al cargar la página
+    sendToWebhook([], "Cargar_pagina_inicio")
   }, [])
 
   // Calcular precio total cuando cambian los items del pedido
@@ -311,6 +336,9 @@ export default function GlassOptimizationSystem() {
         // Mostrar detalles del pedido
         setShowOrderDetails(true)
         setNonOptimizedPrice(currentNonOptimizedPrice)
+
+        // Enviar webhook al mostrar el resumen
+        sendToWebhook(orderItems, "Cargar_pagina_resumen")
       }, 500)
     } catch (err) {
       console.error("Error al procesar el pedido:", err)
@@ -318,7 +346,10 @@ export default function GlassOptimizationSystem() {
     }
   }
 
-  const handleConfirmOrder = () => {
+  const handleConfirmOrder = async () => {
+    // Enviar webhook al confirmar la orden
+    await sendToWebhook(orderItems, "Orden_confirmada")
+
     // Aquí iría la lógica para guardar en el backend
     // Y disparar el contacto por WhatsApp
 
@@ -331,8 +362,8 @@ export default function GlassOptimizationSystem() {
       })}`,
     )
 
-    // Abrir WhatsApp con el mensaje predefinido
-    window.open(`https://wa.me/5491100000000?text=${whatsappText}`, "_blank")
+    // Abrir WhatsApp con el mensaje predefinido - número actualizado
+    window.open(`https://wa.me/5491141422955?text=${whatsappText}`, "_blank")
 
     // Mostrar mensaje de éxito
     setShowSuccessMessage(true)
