@@ -1,27 +1,54 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# Dependencias
 /node_modules
+/.pnp
+.pnp.js
 
-# next.js
+# Testing
+/coverage
+
+# Next.js
 /.next/
 /out/
 
-# production
+# Producción
 /build
 
-# debug
+# Archivos de entorno local
+.env*.local
+.env
+
+# Archivos de verificación
+.eslintcache
+
+# Archivos de sistema
+.DS_Store
+*.pem
+
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 
-# env files
-.env*
-
-# vercel
+# Archivos de Vercel
 .vercel
 
-# typescript
+# Archivos de TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Archivos de Docker
+.dockerignore
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp

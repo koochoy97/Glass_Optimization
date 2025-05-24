@@ -1,52 +1,76 @@
-... shell ...
+# Sistema de Optimización de Vidrios
 
-Perfecto! Ahora tienes una aplicación completa de optimización de vidrios lista para ejecutar. He organizado todo el código con:
+Sistema inteligente para optimizar cortes de vidrio y reducir desperdicios.
 
-## ✅ **Estructura completa de archivos:**
+## 🚀 Deploy con Coolify
 
-### **Configuración del proyecto:**
-- `package.json` - Con todas las dependencias necesarias
-- `tsconfig.json` - Configuración de TypeScript
-- `next.config.js` - Configuración de Next.js
-- `tailwind.config.js` - Configuración de Tailwind CSS
-- `postcss.config.js` - Configuración de PostCSS
+### Requisitos previos
+- Coolify instalado y configurado
+- Docker disponible en el servidor
+- Node.js 18+ (para desarrollo local)
 
-### **Componentes UI (shadcn/ui):**
-- Todos los componentes de UI necesarios están incluidos
-- `button`, `card`, `input`, `label`, `select`, `table`, `alert`, `badge`
+### Configuración en Coolify
 
-### **Lógica de negocio:**
-- `lib/glass-data.ts` - Base de datos de tipos de vidrio con precios
-- `lib/calculator.ts` - Funciones de cálculo de precios
-- `lib/optimizer.ts` - Algoritmos de optimización de cortes
-- `lib/integration.ts` - Simulación de integración con sistemas externos
-- `lib/order-history.ts` - Gestión del historial de pedidos
+1. **Crear nuevo proyecto en Coolify:**
+   - Conecta tu repositorio Git
+   - Selecciona "Docker Compose" como tipo de aplicación
+   - Coolify detectará automáticamente el `docker-compose.yml`
 
-### **Componentes principales:**
-- `glass-optimization-system.tsx` - Componente principal del sistema
-- `glass-cut-visualization.tsx` - Visualización de cortes en canvas
-- `savings-notification.tsx` - Notificación de ahorros con confetti
-- `system-info.tsx` - Información del sistema
-- `order-history.tsx` - Historial de pedidos
+2. **Variables de entorno (opcional):**
+   \`\`\`bash
+   NODE_ENV=production
+   NEXT_TELEMETRY_DISABLED=1
+   PORT=3000
+   \`\`\`
 
-## 🚀 **Para ejecutar la aplicación:**
+3. **Configuración de red:**
+   - Puerto interno: 3000
+   - Coolify manejará automáticamente el proxy reverso
 
-1. **Instalar dependencias:**
+### Estructura del proyecto
+
+\`\`\`
+glass-optimization-system/
+├── app/                    # Aplicación Next.js
+├── components/            # Componentes React
+├── lib/                   # Utilidades y lógica de negocio
+├── Dockerfile            # Configuración Docker
+├── docker-compose.yml    # Configuración para Coolify
+├── coolify.yml          # Configuración específica de Coolify
+└── package.json         # Dependencias del proyecto
+\`\`\`
+
+### Desarrollo local
+
 \`\`\`bash
+# Instalar dependencias
 npm install
-\`\`\`
 
-2. **Ejecutar en desarrollo:**
-\`\`\`bash
+# Ejecutar en modo desarrollo
 npm run dev
+
+# Construir para producción
+npm run build
+
+# Ejecutar en producción
+npm start
 \`\`\`
 
-3. **Abrir en el navegador:**
-\`\`\`
-http://localhost:3000
+### Deploy manual con Docker
+
+\`\`\`bash
+# Construir imagen
+npm run docker:build
+
+# Ejecutar contenedor
+npm run docker:run
 \`\`\`
 
-## 📱 **Características incluidas:**
+### Health Check
+
+La aplicación incluye un endpoint de health check en `/api/health` que Coolify puede usar para verificar el estado de la aplicación.
+
+### Características
 
 - ✅ **Responsive design** - Funciona en móvil y desktop
 - ✅ **Sistema de optimización** - Calcula el mejor uso de materiales
@@ -54,7 +78,11 @@ http://localhost:3000
 - ✅ **Calculadora de ahorros** - Muestra el ahorro en tiempo real
 - ✅ **Historial de pedidos** - Guarda y permite editar pedidos
 - ✅ **Integración WhatsApp** - Envía pedidos por WhatsApp
-- ✅ **Notificaciones animadas** - Con confetti y efectos visuales
 - ✅ **Base de datos de vidrios** - 45+ tipos de vidrio con precios reales
 
-La aplicación está completamente funcional y lista para usar. ¡Puedes empezar a cargar cortes de vidrio y ver cómo optimiza los materiales para ahorrar dinero!
+### Soporte
+
+Para problemas relacionados con el deploy, verifica:
+1. Los logs de Coolify
+2. El health check endpoint: `/api/health`
+3. Las variables de entorno configuradas
