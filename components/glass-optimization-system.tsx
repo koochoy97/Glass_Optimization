@@ -89,6 +89,8 @@ export default function GlassOptimizationSystem() {
   const [showOrderHistory, setShowOrderHistory] = useState(false)
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const [showSavingsNotification, setShowSavingsNotification] = useState(false)
+  const [customerName, setCustomerName] = useState("")
+  const [customerPhone, setCustomerPhone] = useState("")
 
   // Cargar información de hojas al iniciar
   useEffect(() => {
@@ -346,20 +348,49 @@ export default function GlassOptimizationSystem() {
     }
   }
 
+  // Función para validar datos de contacto
+  const isContactDataValid = () => {
+    return customerName.trim().length > 0 && customerPhone.trim().length > 0
+  }
+
   const handleConfirmOrder = async () => {
-    // Enviar webhook al confirmar la orden
-    await sendToWebhook(orderItems, "Orden_confirmada")
+    // Validar que el cliente haya ingresado su información
+    if (!customerName.trim() || !customerPhone.trim()) {
+      setError(
+        "⚠️ Para confirmar tu pedido necesitamos tu nombre completo y número de celular. Por favor, completá ambos campos.",
+      )
+      // Hacer scroll hacia los campos de contacto
+      document.getElementById("customer-name")?.scrollIntoView({ behavior: "smooth", block: "center" })
+      return
+    }
 
-    // Aquí iría la lógica para guardar en el backend
-    // Y disparar el contacto por WhatsApp
+    // Limpiar cualquier error previo
+    setError("")
 
-    // Generar el texto para WhatsApp con los detalles del pedido
+    // Enviar webhook al confirmar la orden con información del cliente
+    await sendToWebhook(
+      orderItems.map((item) => ({
+        ...item,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+      })),
+      "Orden_confirmada",
+    )
+
+    // Generar el texto para WhatsApp con los detalles del pedido y datos del cliente
     const whatsappText = encodeURIComponent(
-      `Hola, quiero confirmar mi pedido de vidrios:\n\n${orderItems
-        .map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}mm x ${item.height}mm)`)
-        .join("\n")}\n\nPrecio optimizado: $${totalPrice.toLocaleString("es-AR", {
+      `Hola, soy ${customerName.trim()} y quiero confirmar mi pedido de vidrios:
+
+📱 Mi teléfono: ${customerPhone.trim()}
+
+📋 Detalle del pedido:
+${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}mm x ${item.height}mm)`).join("\n")}
+
+💰 Precio optimizado: $${totalPrice.toLocaleString("es-AR", {
         minimumFractionDigits: 2,
-      })}`,
+      })}
+
+¡Gracias!`,
     )
 
     // Abrir WhatsApp con el mensaje predefinido - número actualizado
@@ -563,6 +594,8 @@ export default function GlassOptimizationSystem() {
                   setWidth("")
                   setHeight("")
                   setQuantity("1")
+                  setCustomerName("")
+                  setCustomerPhone("")
                 }}
                 className="bg-blue-600 hover:bg-blue-700"
               >
@@ -710,6 +743,73 @@ export default function GlassOptimizationSystem() {
               </div>
             </div>
 
+            <div>
+              <h3 className="font-medium mb-3">Datos de Contacto</h3>
+
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+                <p className="text-blue-700 text-sm mb-3 flex items-center">
+                  <Info className="h-4 w-4 mr-2" />
+                  Para procesar tu pedido necesitamos tus datos de contacto
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="customer-name" className="mb-1 block text-sm font-medium">
+                      Nombre completo *
+                    </Label>
+                    <Input
+                      id="customer-name"
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => {
+                        setCustomerName(e.target.value)
+                        // Limpiar error cuando el usuario empiece a escribir
+                        if (error.includes("nombre") || error.includes("completá")) {
+                          setError("")
+                        }
+                      }}
+                      placeholder="Ej: Juan Pérez"
+                      className={`w-full ${!customerName.trim() && error ? "border-red-300 focus:border-red-500" : ""}`}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="customer-phone" className="mb-1 block text-sm font-medium">
+                      Número de celular *
+                    </Label>
+                    <Input
+                      id="customer-phone"
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(e) => {
+                        setCustomerPhone(e.target.value)
+                        // Limpiar error cuando el usuario empiece a escribir
+                        if (error.includes("celular") || error.includes("completá")) {
+                          setError("")
+                        }
+                      }}
+                      placeholder="Ej: 11 1234-5678"
+                      className={`w-full ${!customerPhone.trim() && error ? "border-red-300 focus:border-red-500" : ""}`}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <p className="text-xs text-gray-500 mt-2">
+                  * Campos obligatorios. Te contactaremos por WhatsApp a este número.
+                </p>
+
+                {/* Indicador de validación */}
+                {isContactDataValid() && (
+                  <div className="mt-3 flex items-center text-green-600 text-sm">
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Datos de contacto completos ✓
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-4 pt-4 border-t">
               {/* Resumen económico destacado - Ahora a ancho completo en móvil */}
               <div className="bg-green-50 p-4 rounded-md border border-green-200 w-full">
@@ -733,9 +833,15 @@ export default function GlassOptimizationSystem() {
 
                 <Button
                   onClick={handleConfirmOrder}
-                  className="bg-green-600 hover:bg-green-700 h-12 text-base order-1 sm:order-2"
+                  disabled={!isContactDataValid()}
+                  className={`h-12 text-base order-1 sm:order-2 ${
+                    isContactDataValid()
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-gray-400 cursor-not-allowed hover:bg-gray-400"
+                  }`}
                 >
-                  <CheckCircle className="mr-2 h-5 w-5" /> Confirmar pedido
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  {isContactDataValid() ? "Confirmar pedido" : "Completá tus datos para continuar"}
                 </Button>
               </div>
 
@@ -872,10 +978,20 @@ export default function GlassOptimizationSystem() {
                       </SelectTrigger>
                       <SelectContent className="max-h-[40vh]">
                         {glassTypes.map((glass) => (
-                          <SelectItem key={glass.name} value={glass.name}>
-                            {glass.name}
-                            {canSellHalfSheet(glass.name) && " (disponible por media hoja)"}
-                            (${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 2 })}/m²)
+                          <SelectItem key={glass.name} value={glass.name} className="py-3">
+                            <div className="flex flex-col w-full">
+                              <div className="font-medium text-sm leading-tight">{glass.name}</div>
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mt-1">
+                                <div className="text-xs text-gray-600">
+                                  ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
+                                </div>
+                                {canSellHalfSheet(glass.name) && (
+                                  <div className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full w-fit">
+                                    ½ hoja disponible
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1108,9 +1224,20 @@ export default function GlassOptimizationSystem() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     {glassTypes.map((glass) => (
-                                      <SelectItem key={glass.name} value={glass.name}>
-                                        {glass.name}
-                                        {canSellHalfSheet(glass.name) && " (½)"}
+                                      <SelectItem key={glass.name} value={glass.name} className="py-2">
+                                        <div className="flex flex-col w-full">
+                                          <div className="font-medium text-xs leading-tight">{glass.name}</div>
+                                          <div className="flex justify-between items-center mt-0.5">
+                                            <div className="text-xs text-gray-600">
+                                              ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
+                                            </div>
+                                            {canSellHalfSheet(glass.name) && (
+                                              <div className="text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded text-center">
+                                                ½
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
