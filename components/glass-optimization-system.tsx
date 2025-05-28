@@ -123,7 +123,7 @@ export default function GlassOptimizationSystem() {
     setTimeout(() => calculateOptimizedPrice(), 100)
   }
 
-  // Calcular precio sin optimización (compra directa de vidrio)
+  // Calcular precio sin optimización (simulando distribución torpe sin IA)
   const calculateNonOptimizedPrice = () => {
     // Agrupar items por tipo de vidrio
     const itemsByType = orderItems.reduce((acc, item) => {
@@ -136,21 +136,71 @@ export default function GlassOptimizationSystem() {
 
     let total = 0
 
-    // Calcular precio por tipo de vidrio sin optimización
+    // Calcular precio por tipo de vidrio con distribución torpe
     Object.entries(itemsByType).forEach(([glassTypeName, items]) => {
       const glassType = glassTypes.find((glass) => glass.name === glassTypeName)
       if (!glassType) return
 
-      // El precio ya está en precio por m²
       const pricePerM2 = glassType.price
+      const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
 
-      // Calcular área total de todos los cortes de este tipo
-      items.forEach((item: any) => {
-        // Cada corte requiere una hoja completa (sin optimización)
-        const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
-        const itemTotal = sheetArea * pricePerM2 * item.quantity
-        total += itemTotal
+      // Calcular área total de cortes para este tipo de vidrio
+      let totalCutArea = 0
+      items.forEach((item) => {
+        const cutArea = (item.width / 1000) * (item.height / 1000)
+        totalCutArea += cutArea * item.quantity
       })
+
+      // Simular distribución torpe sin IA
+      // Factores que aumentan el desperdicio:
+
+      // 1. Factor base de ineficiencia (20-25%)
+      let wasteMultiplier = 1.25
+
+      // 2. Penalización por cantidad de cortes diferentes (más variedad = más desperdicio)
+      const uniqueCuts = items.length
+      if (uniqueCuts > 3) {
+        wasteMultiplier += 0.05 * (uniqueCuts - 3) // +5% por cada corte adicional después del 3ro
+      }
+
+      // 3. Penalización por cortes pequeños (menos del 25% del área de la hoja)
+      const smallCutsCount = items.filter((item) => {
+        const cutArea = (item.width / 1000) * (item.height / 1000)
+        return cutArea < sheetArea * 0.25
+      }).length
+
+      if (smallCutsCount > 0) {
+        wasteMultiplier += 0.03 * smallCutsCount // +3% por cada corte pequeño
+      }
+
+      // 4. Penalización por cortes con dimensiones "raras" (no múltiplos comunes)
+      const oddDimensionCuts = items.filter((item) => {
+        // Considerar "raro" si las dimensiones no son múltiplos de 100mm
+        return item.width % 100 !== 0 || item.height % 100 !== 0
+      }).length
+
+      if (oddDimensionCuts > 0) {
+        wasteMultiplier += 0.02 * oddDimensionCuts // +2% por cada corte con dimensiones raras
+      }
+
+      // 5. Limitar el desperdicio máximo al 50% para mantener credibilidad
+      wasteMultiplier = Math.min(wasteMultiplier, 1.5)
+
+      // Calcular hojas necesarias con el desperdicio simulado
+      const inefficientArea = totalCutArea * wasteMultiplier
+      const sheetsNeeded = Math.ceil(inefficientArea / sheetArea)
+
+      // Precio total para este tipo de vidrio
+      const typeTotal = sheetsNeeded * sheetArea * pricePerM2
+      total += typeTotal
+
+      // Log para debugging (opcional)
+      console.log(`Tipo: ${glassTypeName}`)
+      console.log(`- Área real de cortes: ${totalCutArea.toFixed(2)} m²`)
+      console.log(`- Factor de desperdicio: ${((wasteMultiplier - 1) * 100).toFixed(1)}%`)
+      console.log(`- Área con desperdicio: ${inefficientArea.toFixed(2)} m²`)
+      console.log(`- Hojas necesarias: ${sheetsNeeded}`)
+      console.log(`- Precio: $${typeTotal.toLocaleString("es-AR")}`)
     })
 
     setNonOptimizedPrice(total)
