@@ -81,6 +81,7 @@ export default function GlassOptimizationSystem() {
   const [showSavingsNotification, setShowSavingsNotification] = useState(false)
   const [customerName, setCustomerName] = useState("")
   const [customerPhone, setCustomerPhone] = useState("")
+  const [customerComments, setCustomerComments] = useState("")
 
   // Add error boundary and clean up any potential Web3 references
   useEffect(() => {
@@ -389,7 +390,14 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
 
 💰 Precio Viprou optimizado: $${totalPrice.toLocaleString("es-AR", {
         minimumFractionDigits: 2,
-      })}
+      })}${
+        customerComments.trim()
+          ? `
+
+📝 Comentarios adicionales:
+${customerComments.trim()}`
+          : ""
+      }
 
 ¡Gracias!`,
     )
@@ -597,6 +605,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                   setQuantity("1")
                   setCustomerName("")
                   setCustomerPhone("")
+                  setCustomerComments("")
                 }}
                 className="bg-blue-600 hover:bg-blue-700"
               >
@@ -741,6 +750,24 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-medium mb-3">Comentarios del cliente (opcional)</h3>
+
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <textarea
+                  id="customer-comments"
+                  value={customerComments}
+                  onChange={(e) => setCustomerComments(e.target.value)}
+                  placeholder="Escribí aquí cualquier aclaración o detalle especial que debamos saber sobre tu pedido…"
+                  className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  rows={4}
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Ejemplos: "Filo matado en los bordes", "Cuidado con el traslado", "Entregar por la mañana", etc.
+                </p>
               </div>
             </div>
 
