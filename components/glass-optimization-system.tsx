@@ -121,45 +121,38 @@ export default function GlassOptimizationSystem() {
     setTimeout(() => calculateOptimizedPrice(), 100)
   }
 
-  // Calcular precio sin optimización (simulación realista con desperdicio 30-50%)
-  const calculateNonOptimizedPrice = (currentOptimizedPrice?: number) => {
-    if (orderItems.length === 0) {
-      setNonOptimizedPrice(0)
-      return 0
-    }
+  // Calcular precio sin optimización (compra directa de vidrio)
+  const calculateNonOptimizedPrice = () => {
+    // Agrupar items por tipo de vidrio
+    const itemsByType = orderItems.reduce((acc, item) => {
+      if (!acc[item.glassType]) {
+        acc[item.glassType] = []
+      }
+      acc[item.glassType].push(item)
+      return acc
+    }, {})
 
-    // Usar el precio optimizado pasado como parámetro o el estado actual
-    const optimizedPrice = currentOptimizedPrice || totalPrice
+    let total = 0
 
-    if (optimizedPrice === 0) {
-      setNonOptimizedPrice(0)
-      return 0
-    }
+    // Calcular precio por tipo de vidrio sin optimización
+    Object.entries(itemsByType).forEach(([glassTypeName, items]) => {
+      const glassType = glassTypes.find((glass) => glass.name === glassTypeName)
+      if (!glassType) return
 
-    // Aplicar factor de desperdicio realista (1.5 = 50% más caro sin optimización)
-    // Esto simula una distribución básica con desperdicio del 30-50%
-    const wasteMultiplier = 1.5
-    let nonOptimizedTotal = optimizedPrice * wasteMultiplier
+      // El precio ya está en precio por m²
+      const pricePerM2 = glassType.price
 
-    // Tope de seguridad: el ahorro no debe superar el 50% para mantener realismo
-    const maxSavingsPercentage = 0.5 // 50%
-    const maxNonOptimizedPrice = optimizedPrice / (1 - maxSavingsPercentage) // Si ahorro es 50%, precio sin opt = precio_opt / 0.5
+      // Calcular área total de todos los cortes de este tipo
+      items.forEach((item: any) => {
+        // Cada corte requiere una hoja completa (sin optimización)
+        const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
+        const itemTotal = sheetArea * pricePerM2 * item.quantity
+        total += itemTotal
+      })
+    })
 
-    // Aplicar el tope de seguridad
-    if (nonOptimizedTotal > maxNonOptimizedPrice) {
-      nonOptimizedTotal = maxNonOptimizedPrice
-    }
-
-    // Asegurar que siempre haya al menos un pequeño ahorro (mínimo 10%)
-    const minSavingsPercentage = 0.1 // 10%
-    const minNonOptimizedPrice = optimizedPrice / (1 - minSavingsPercentage)
-
-    if (nonOptimizedTotal < minNonOptimizedPrice) {
-      nonOptimizedTotal = minNonOptimizedPrice
-    }
-
-    setNonOptimizedPrice(nonOptimizedTotal)
-    return nonOptimizedTotal
+    setNonOptimizedPrice(total)
+    return total
   }
 
   // Modificar la función calculateTotalPrice para agrupar por tipo de vidrio
@@ -168,7 +161,6 @@ export default function GlassOptimizationSystem() {
     if (orderItems.length === 0) {
       setTotalPrice(0)
       setOptimizedGlassSummary([])
-      setNonOptimizedPrice(0)
       return
     }
 
@@ -217,8 +209,8 @@ export default function GlassOptimizationSystem() {
     setTotalPrice(total)
     setOptimizedGlassSummary(summary)
 
-    // Calcular también el precio sin optimización usando el total calculado
-    calculateNonOptimizedPrice(total)
+    // Calcular también el precio sin optimización
+    calculateNonOptimizedPrice()
   }
 
   // Función para normalizar nombres de tipos de vidrio para comparación
@@ -1158,8 +1150,8 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                     )}
 
                     <p className="text-sm text-gray-500">
-                      El precio sin optimización simula una distribución básica con desperdicio del 30-50%. El ahorro
-                      mostrado refleja la eficiencia de nuestro sistema de optimización.
+                      Este cálculo es una estimación basada en el precio por m² del vidrio. El ahorro real puede variar
+                      según la distribución final de los cortes.
                     </p>
                   </div>
                 </div>
@@ -1177,114 +1169,328 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                     <h3 className="font-medium">Revisá tus cortes</h3>
                   </div>
 
-                  <div className="bg-gray-50 rounded-md p-2 overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="whitespace-nowrap">Tipo de Vidrio</TableHead>
-                          <TableHead className="whitespace-nowrap">Dimensiones</TableHead>
-                          <TableHead className="whitespace-nowrap">Cantidad</TableHead>
-                          <TableHead className="whitespace-nowrap">Precio</TableHead>
-                          <TableHead></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {orderItems.map((item) => {
-                          const glassType = glassTypes.find((glass) => glass.name === item.glassType)
+                  <div className="bg-gray-50 rounded-md p-3">
+                    {/* Versión desktop - Tabla tradicional con indicador de scroll */}
+                    <div className="hidden lg:block relative">
+                      {/* Indicador de scroll horizontal */}
+                      <div
+                        id={`scroll-indicator-${Math.random().toString(36).substr(2, 9)}`}
+                        className="absolute top-2 right-2 z-10 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 animate-pulse transition-opacity duration-300"
+                        style={{ display: "flex" }}
+                      >
+                        <span>Desliza para ver más</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
 
-                          // Buscar el precio optimizado para este tipo de vidrio
-                          const optimizedItem = optimizedGlassSummary.find((summary) => summary.type === item.glassType)
+                      <div
+                        className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 transition-all duration-200"
+                        onScroll={(e) => {
+                          const indicator = e.currentTarget.parentElement?.querySelector('[id^="scroll-indicator-"]')
+                          if (indicator) {
+                            indicator.style.opacity = "0"
+                            setTimeout(() => {
+                              indicator.style.display = "none"
+                            }, 300)
+                          }
+                        }}
+                        onTouchStart={(e) => {
+                          const indicator = e.currentTarget.parentElement?.querySelector('[id^="scroll-indicator-"]')
+                          if (indicator) {
+                            indicator.style.opacity = "0"
+                            setTimeout(() => {
+                              indicator.style.display = "none"
+                            }, 300)
+                          }
+                        }}
+                        style={{
+                          scrollBehavior: "smooth",
+                          WebkitOverflowScrolling: "touch", // Mejora la experiencia táctil en iOS
+                        }}
+                      >
+                        <Table className="min-w-full">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="whitespace-nowrap min-w-[200px]">Tipo de Vidrio</TableHead>
+                              <TableHead className="whitespace-nowrap min-w-[120px]">Dimensiones</TableHead>
+                              <TableHead className="whitespace-nowrap min-w-[80px]">Cantidad</TableHead>
+                              <TableHead className="whitespace-nowrap min-w-[120px]">Precio</TableHead>
+                              <TableHead className="whitespace-nowrap min-w-[140px]">Acciones</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {orderItems.map((item) => {
+                              const glassType = glassTypes.find((glass) => glass.name === item.glassType)
+                              const optimizedItem = optimizedGlassSummary.find(
+                                (summary) => summary.type === item.glassType,
+                              )
 
-                          // Calcular el precio optimizado por ítem
-                          let price = 0
-                          if (glassType && optimizedItem) {
-                            // Usar el precio optimizado proporcional a este ítem
-                            const itemArea = (item.width / 1000) * (item.height / 1000) * item.quantity
-                            const typeArea = optimizedGlassSummary
-                              .filter((summary) => summary.type === item.glassType)
-                              .reduce((total, summary) => total + summary.area, 0)
+                              let price = 0
+                              if (glassType && optimizedItem) {
+                                const itemArea = (item.width / 1000) * (item.height / 1000) * item.quantity
+                                const typeArea = optimizedGlassSummary
+                                  .filter((summary) => summary.type === item.glassType)
+                                  .reduce((total, summary) => total + summary.area, 0)
 
-                            // Calcular precio proporcional al área
-                            if (typeArea > 0) {
-                              price = (itemArea / typeArea) * optimizedItem.totalPrice
-                            } else {
-                              // Fallback al cálculo original si no hay área
-                              const pricePerM2 = glassType.price
-                              const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
-                              price = sheetArea * pricePerM2 * item.quantity
-                            }
-                          } else if (glassType) {
-                            // Fallback al cálculo original si no hay optimización
+                                if (typeArea > 0) {
+                                  price = (itemArea / typeArea) * optimizedItem.totalPrice
+                                } else {
+                                  const pricePerM2 = glassType.price
+                                  const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
+                                  price = sheetArea * pricePerM2 * item.quantity
+                                }
+                              } else if (glassType) {
+                                const pricePerM2 = glassType.price
+                                const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
+                                price = sheetArea * pricePerM2 * item.quantity
+                              }
+
+                              return (
+                                <TableRow key={item.id} className="hover:bg-white/50 transition-colors">
+                                  <TableCell className="py-3">
+                                    <Select
+                                      value={item.glassType}
+                                      onValueChange={(value) => handleChangeGlassType(item.id, value)}
+                                    >
+                                      <SelectTrigger className="h-9 text-sm min-w-[180px]">
+                                        <SelectValue>{item.glassType}</SelectValue>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {glassTypes.map((glass) => (
+                                          <SelectItem key={glass.name} value={glass.name} className="py-2">
+                                            <div className="flex flex-col w-full">
+                                              <div className="font-medium text-sm leading-tight">{glass.name}</div>
+                                              <div className="flex justify-between items-center mt-0.5">
+                                                <div className="text-xs text-gray-600">
+                                                  ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+                                                  /m²
+                                                </div>
+                                                {canSellHalfSheet(glass.name) && (
+                                                  <div className="text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded text-center">
+                                                    ½
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </TableCell>
+                                  <TableCell className="py-3 whitespace-nowrap font-medium">
+                                    {item.width}×{item.height}mm
+                                  </TableCell>
+                                  <TableCell className="py-3 whitespace-nowrap text-center font-medium">
+                                    {item.quantity}
+                                  </TableCell>
+                                  <TableCell className="py-3 whitespace-nowrap font-bold text-green-600">
+                                    $
+                                    {price.toLocaleString("es-AR", {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}
+                                  </TableCell>
+                                  <TableCell className="py-3">
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleEditItem(item.id)}
+                                        className="h-9 px-3 text-blue-600 border-blue-300 hover:bg-blue-50 font-medium transition-all duration-200 hover:scale-105"
+                                      >
+                                        <Edit className="h-4 w-4 mr-1" />
+                                        Editar
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleRemoveItem(item.id)}
+                                        className="h-9 w-9 p-0 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-105"
+                                        title="Eliminar corte"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+
+                    {/* Versión móvil y tablet - Tarjetas optimizadas sin scroll horizontal */}
+                    <div className="lg:hidden space-y-4">
+                      {orderItems.map((item, index) => {
+                        const glassType = glassTypes.find((glass) => glass.name === item.glassType)
+                        const optimizedItem = optimizedGlassSummary.find((summary) => summary.type === item.glassType)
+
+                        let price = 0
+                        if (glassType && optimizedItem) {
+                          const itemArea = (item.width / 1000) * (item.height / 1000) * item.quantity
+                          const typeArea = optimizedGlassSummary
+                            .filter((summary) => summary.type === item.glassType)
+                            .reduce((total, summary) => total + summary.area, 0)
+
+                          if (typeArea > 0) {
+                            price = (itemArea / typeArea) * optimizedItem.totalPrice
+                          } else {
                             const pricePerM2 = glassType.price
                             const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
                             price = sheetArea * pricePerM2 * item.quantity
                           }
+                        } else if (glassType) {
+                          const pricePerM2 = glassType.price
+                          const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
+                          price = sheetArea * pricePerM2 * item.quantity
+                        }
 
-                          return (
-                            <TableRow key={item.id}>
-                              <TableCell className="py-2 whitespace-nowrap">
-                                <Select
-                                  value={item.glassType}
-                                  onValueChange={(value) => handleChangeGlassType(item.id, value)}
+                        return (
+                          <div
+                            key={`mobile-${item.id}`}
+                            className="bg-white rounded-xl border-2 border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+                          >
+                            {/* Header con número de corte y tipo de vidrio */}
+                            <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-blue-200">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                                      Corte #{index + 1}
+                                    </span>
+                                    {canSellHalfSheet(item.glassType) && (
+                                      <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full">
+                                        ½ hoja disponible
+                                      </span>
+                                    )}
+                                  </div>
+                                  <h4 className="font-semibold text-gray-900 text-sm leading-tight">
+                                    {item.glassType}
+                                  </h4>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Contenido principal de la tarjeta */}
+                            <div className="p-4 space-y-4">
+                              {/* Información del corte en grid grande y claro */}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                  <div className="text-xs text-gray-500 font-medium mb-1">DIMENSIONES</div>
+                                  <div className="font-bold text-lg text-gray-900">
+                                    {item.width} × {item.height}
+                                  </div>
+                                  <div className="text-xs text-gray-600">milímetros</div>
+                                </div>
+                                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                  <div className="text-xs text-gray-500 font-medium mb-1">CANTIDAD</div>
+                                  <div className="font-bold text-lg text-gray-900">{item.quantity}</div>
+                                  <div className="text-xs text-gray-600">unidades</div>
+                                </div>
+                              </div>
+
+                              {/* Precio destacado */}
+                              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <div className="text-xs text-green-700 font-medium mb-1">PRECIO ESTIMADO</div>
+                                    <div className="font-bold text-xl text-green-700">
+                                      $
+                                      {price.toLocaleString("es-AR", {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      })}
+                                    </div>
+                                  </div>
+                                  <div className="text-green-600">
+                                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                                        clipRule="evenodd"
+                                      />
+                                    </svg>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Botones de acción grandes y táctiles */}
+                              <div className="flex gap-3 pt-2">
+                                <Button
+                                  onClick={() => handleEditItem(item.id)}
+                                  className="flex-1 h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all duration-200"
                                 >
-                                  <SelectTrigger className="h-8 text-xs">
-                                    <SelectValue>{item.glassType}</SelectValue>
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {glassTypes.map((glass) => (
-                                      <SelectItem key={glass.name} value={glass.name} className="py-2">
-                                        <div className="flex flex-col w-full">
-                                          <div className="font-medium text-xs leading-tight">{glass.name}</div>
-                                          <div className="flex justify-between items-center mt-0.5">
-                                            <div className="text-xs text-gray-600">
-                                              ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
-                                            </div>
-                                            {canSellHalfSheet(glass.name) && (
-                                              <div className="text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded text-center">
-                                                ½
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </TableCell>
-                              <TableCell className="py-2 whitespace-nowrap">
-                                {item.width}x{item.height}mm
-                              </TableCell>
-                              <TableCell className="py-2 whitespace-nowrap">{item.quantity}</TableCell>
-                              <TableCell className="py-2 whitespace-nowrap">
-                                $
-                                {price.toLocaleString("es-AR", {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}
-                              </TableCell>
-                              <TableCell className="py-2 flex gap-1">
+                                  <Edit className="h-5 w-5 mr-2" />
+                                  Editar corte
+                                </Button>
                                 <Button
                                   variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEditItem(item.id)}
-                                  className="h-8 px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
-                                >
-                                  <Edit className="h-4 w-4 mr-1" /> Editar
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
                                   onClick={() => handleRemoveItem(item.id)}
-                                  className="h-8 w-8 p-0 text-red-500"
+                                  className="h-12 w-12 p-0 text-red-500 border-2 border-red-300 hover:bg-red-50 hover:border-red-400 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all duration-200"
+                                  title="Eliminar corte"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-5 w-5" />
                                 </Button>
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
+                              </div>
+
+                              {/* Selector de tipo de vidrio - Colapsado por defecto */}
+                              <details className="group">
+                                <summary className="cursor-pointer text-sm text-blue-600 font-medium py-3 px-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors duration-200 flex items-center justify-between">
+                                  <span>Cambiar tipo de vidrio</span>
+                                  <svg
+                                    className="w-4 h-4 transition-transform duration-200 group-open:rotate-180"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 9l-7 7-7-7"
+                                    />
+                                  </svg>
+                                </summary>
+                                <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                  <Label className="text-xs text-gray-600 font-medium mb-2 block">
+                                    SELECCIONAR NUEVO TIPO:
+                                  </Label>
+                                  <Select
+                                    value={item.glassType}
+                                    onValueChange={(value) => handleChangeGlassType(item.id, value)}
+                                  >
+                                    <SelectTrigger className="h-12 text-base border-2 border-gray-300 hover:border-blue-400 transition-colors">
+                                      <SelectValue>{item.glassType}</SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-60">
+                                      {glassTypes.map((glass) => (
+                                        <SelectItem key={glass.name} value={glass.name} className="py-3">
+                                          <div className="flex flex-col w-full">
+                                            <div className="font-medium text-sm leading-tight">{glass.name}</div>
+                                            <div className="flex justify-between items-center mt-1">
+                                              <div className="text-xs text-gray-600">
+                                                ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
+                                              </div>
+                                              {canSellHalfSheet(glass.name) && (
+                                                <div className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                                  ½ hoja
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </details>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
 
                   <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-100">
