@@ -1324,6 +1324,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                                         className="h-7 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm text-blue-600 border-blue-300 hover:bg-blue-50 font-medium transition-all duration-200 hover:scale-105"
                                       >
                                         <Edit className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                                        <span className="sm:hidden text-xs ml-1">Editar</span>
                                         <span className="hidden sm:inline">Editar</span>
                                       </Button>
                                       <Button
