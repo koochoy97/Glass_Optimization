@@ -8,18 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  AlertCircle,
-  Plus,
-  Info,
-  Trash2,
-  TrendingDown,
-  Sparkles,
-  CheckCircle,
-  Edit,
-  RefreshCw,
-  ArrowLeft,
-} from "lucide-react"
+import { AlertCircle, Plus, Info, Trash2, TrendingDown, CheckCircle, Edit, RefreshCw, ArrowLeft } from "lucide-react"
 import { glassTypes } from "@/lib/glass-data"
 import { procesarPedidoNuevo, obtenerInformacionHojas, reiniciarSistemaOptimizacion } from "@/lib/integration"
 import type { OrderItem } from "@/lib/calculator"
@@ -386,7 +375,7 @@ export default function GlassOptimizationSystem() {
 📋 Detalle del pedido:
 ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}mm x ${item.height}mm)`).join("\n")}
 
-💰 Precio optimizado: $${totalPrice.toLocaleString("es-AR", {
+💰 Precio Viprou optimizado: $${totalPrice.toLocaleString("es-AR", {
         minimumFractionDigits: 2,
       })}
 
@@ -624,21 +613,21 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
                 <h3 className="font-medium text-green-800 mb-4 flex items-center">
                   <TrendingDown className="h-5 w-5 mr-2 text-green-600" />
-                  Ahorro con Optimización
+                  Ahorro Viprou con Optimización
                 </h3>
 
                 <div className="space-y-3">
                   {/* Versión móvil - Apilada verticalmente */}
                   <div className="sm:hidden space-y-3">
                     <div className="bg-white p-3 rounded-md border border-gray-100 flex justify-between items-center">
-                      <p className="text-sm text-gray-500">Sin optimización:</p>
+                      <p className="text-sm text-gray-500">Precio sin optimización:</p>
                       <p className="font-medium line-through text-red-500">
                         ${nonOptimizedPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </p>
                     </div>
 
                     <div className="bg-white p-3 rounded-md border border-gray-100 flex justify-between items-center">
-                      <p className="text-sm text-gray-500">Con optimización:</p>
+                      <p className="text-sm text-gray-500">Precio Viprou optimizado:</p>
                       <p className="font-medium text-green-600">
                         ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </p>
@@ -646,7 +635,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
 
                     <div className="bg-green-100 p-3 rounded-md border border-green-200">
                       <div className="flex justify-between items-center">
-                        <p className="text-sm text-green-700">Ahorro total:</p>
+                        <p className="text-sm text-green-700">Ahorro Viprou total:</p>
                         <p className="font-bold text-green-700">
                           ${(nonOptimizedPrice - totalPrice).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                         </p>
@@ -664,21 +653,21 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                   {/* Versión desktop - En columnas */}
                   <div className="hidden sm:grid grid-cols-3 gap-4">
                     <div className="bg-white p-3 rounded-md border border-gray-100">
-                      <p className="text-sm text-gray-500">Sin optimización</p>
+                      <p className="text-sm text-gray-500">Precio sin optimización</p>
                       <p className="font-medium line-through text-red-500">
                         ${nonOptimizedPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </p>
                     </div>
 
                     <div className="bg-white p-3 rounded-md border border-gray-100">
-                      <p className="text-sm text-gray-500">Con optimización</p>
+                      <p className="text-sm text-gray-500">Precio Viprou optimizado</p>
                       <p className="font-medium text-green-600">
                         ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </p>
                     </div>
 
                     <div className="bg-green-100 p-3 rounded-md border border-green-200">
-                      <p className="text-sm text-green-700">Ahorro total</p>
+                      <p className="text-sm text-green-700">Ahorro Viprou total</p>
                       <p className="font-bold text-green-700">
                         ${(nonOptimizedPrice - totalPrice).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                         <span className="text-sm font-normal ml-1">
@@ -814,7 +803,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
               {/* Resumen económico destacado - Ahora a ancho completo en móvil */}
               <div className="bg-green-50 p-4 rounded-md border border-green-200 w-full">
                 <div className="flex flex-col sm:flex-row justify-between items-center">
-                  <p className="text-base text-green-700 font-medium mb-2 sm:mb-0">Total a pagar:</p>
+                  <p className="text-base text-green-700 font-medium mb-2 sm:mb-0">Precio Viprou total a pagar:</p>
                   <p className="text-2xl font-bold text-green-700">
                     ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                   </p>
@@ -903,7 +892,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
     <div className="w-full">
       <Card className="shadow-lg mb-6">
         <CardHeader className="px-4 py-3 sm:px-6 sm:py-4 flex flex-row justify-between items-center bg-gradient-to-r from-blue-50 to-blue-100 border-b">
-          <CardTitle className="text-lg sm:text-xl">Sistema de Optimización de Vidrios</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Viprou – Cotización rápida de vidrios</CardTitle>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -983,7 +972,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                               <div className="font-medium text-sm leading-tight">{glass.name}</div>
                               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mt-1">
                                 <div className="text-xs text-gray-600">
-                                  ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
+                                  Precio Viprou: ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
                                 </div>
                                 {canSellHalfSheet(glass.name) && (
                                   <div className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full w-fit">
@@ -1069,7 +1058,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                       <div className="flex items-center">
                         <Info className="h-5 w-5 mr-2 text-blue-600 flex-shrink-0" />
                         <p className="text-sm text-blue-700">
-                          Vamos a calcular el mejor precio para vos cuando proceses el pedido.
+                          Viprou optimizará mejor tu pedido si agregas más cortes al mismo tipo de vidrio.
                         </p>
                       </div>
                     </div>
@@ -1089,7 +1078,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Vista previa</span>
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">
-                    📐 Así se ve el vidrio que estás cargando. A mayor precisión, mayor optimización.
+                    Viprou utilizará esta información para calcular la distribución óptima de tus cortes.
                   </p>
                   <GlassCutVisualization
                     width={Number(width) || 0}
@@ -1106,53 +1095,56 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
               {showSavingsCalculator && (
                 <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
                   <h3 className="font-semibold text-green-800 mb-3 flex items-center">
-                    <Sparkles className="h-5 w-5 mr-2 text-green-600" />
-                    Calculadora de Ahorro
+                    <span className="text-lg mr-2">💸</span>
+                    Calculadora de Ahorro Viprou
                   </h3>
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-700">Precio sin optimización:</span>
+                      <span className="text-gray-700">Precio estándar sin optimización:</span>
                       <span className="line-through text-red-500">
                         ${nonOptimizedPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between font-bold">
-                      <span className="text-gray-800">Tu precio optimizado:</span>
+                      <span className="text-gray-800">Lo que pagás usando la IA de Viprou:</span>
                       <span className="text-green-600">
                         ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </span>
                     </div>
 
                     {savings > 0 ? (
-                      <div className="bg-white p-3 rounded-md flex items-center">
-                        <div className="bg-green-100 p-2 rounded-full mr-3 flex-shrink-0">
-                          <TrendingDown className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
+                      <div className="bg-white p-3 rounded-md">
+                        <div className="flex items-center mb-2">
+                          <span className="text-lg mr-2">🟢</span>
                           <p className="font-medium text-green-800">
-                            ¡Estás ahorrando ${savings.toLocaleString("es-AR", { minimumFractionDigits: 2 })}!
+                            ¡Ahorro Viprou: ${savings.toLocaleString("es-AR", { minimumFractionDigits: 2 })}!
                           </p>
                         </div>
+                        <p className="text-sm text-gray-700 mb-2">
+                          🟢 Nuestra inteligencia artificial analiza tus cortes y encuentra la forma más eficiente de
+                          usar el vidrio para que gastes menos.
+                        </p>
                       </div>
                     ) : (
-                      <div className="bg-white p-3 rounded-md flex items-center">
-                        <div className="bg-blue-100 p-2 rounded-full mr-3 flex-shrink-0">
-                          <Info className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-blue-800">
-                            Este corte no genera ahorro por ahora, pero sigue siendo el mejor precio.
-                          </p>
-                        </div>
+                      <div className="bg-white p-3 rounded-md">
+                        <p className="text-sm text-gray-700 mb-2">
+                          🟢 Nuestra inteligencia artificial analiza tus cortes y encuentra la forma más eficiente de
+                          usar el vidrio para que gastes menos.
+                        </p>
+                        <p className="text-sm text-blue-700 mb-2">
+                          💡 Agregá más cortes y dejá que la IA trabaje por vos: cuanto más completo sea tu pedido, más
+                          plata podés ahorrar.
+                        </p>
                       </div>
                     )}
 
-                    <p className="text-sm text-gray-500">
-                      Este cálculo es una estimación basada en el precio por m² del vidrio. El ahorro real puede variar
-                      según la distribución final de los cortes.
-                    </p>
+                    <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                      <p className="text-sm text-blue-800">
+                        🧠 La IA de Viprou está diseñada para que vos no pagues de más.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1215,7 +1207,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                               <TableHead className="whitespace-nowrap min-w-[200px]">Tipo de Vidrio</TableHead>
                               <TableHead className="whitespace-nowrap min-w-[120px]">Dimensiones</TableHead>
                               <TableHead className="whitespace-nowrap min-w-[80px]">Cantidad</TableHead>
-                              <TableHead className="whitespace-nowrap min-w-[120px]">Precio</TableHead>
+                              <TableHead className="whitespace-nowrap min-w-[120px]">Precio Viprou</TableHead>
                               <TableHead className="whitespace-nowrap min-w-[140px]">Acciones</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -1263,7 +1255,8 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                                               <div className="font-medium text-sm leading-tight">{glass.name}</div>
                                               <div className="flex justify-between items-center mt-0.5">
                                                 <div className="text-xs text-gray-600">
-                                                  ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+                                                  Viprou: $
+                                                  {glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
                                                   /m²
                                                 </div>
                                                 {canSellHalfSheet(glass.name) && (
@@ -1395,7 +1388,9 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
                                 <div className="flex justify-between items-center">
                                   <div>
-                                    <div className="text-xs text-green-700 font-medium mb-1">PRECIO ESTIMADO</div>
+                                    <div className="text-xs text-green-700 font-medium mb-1">
+                                      PRECIO VIPROU ESTIMADO
+                                    </div>
                                     <div className="font-bold text-xl text-green-700">
                                       $
                                       {price.toLocaleString("es-AR", {
@@ -1471,7 +1466,8 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                                             <div className="font-medium text-sm leading-tight">{glass.name}</div>
                                             <div className="flex justify-between items-center mt-1">
                                               <div className="text-xs text-gray-600">
-                                                ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
+                                                Viprou: $
+                                                {glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
                                               </div>
                                               {canSellHalfSheet(glass.name) && (
                                                 <div className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
@@ -1496,8 +1492,8 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                   <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-100">
                     <p className="text-blue-700 text-sm flex items-center">
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      Tenés {orderItems.length} corte{orderItems.length !== 1 ? "s" : ""}{" "}
-                      {orderItems.length > 1 ? "listos" : "listo"} para procesar. ¿Querés avanzar?
+                      Viprou ha registrado {orderItems.length} corte{orderItems.length !== 1 ? "s" : ""} en tu pedido.
+                      ¿Deseas procesar la optimización ahora?
                     </p>
                   </div>
                 </div>
@@ -1513,7 +1509,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                   </div>
 
                   <p className="text-sm text-gray-600 mb-4">
-                    Al continuar, vamos a calcular la mejor distribución y el precio optimizado de tu pedido.
+                    Viprou procesará tu pedido para ofrecerte el mejor precio con la distribución óptima de cortes.
                   </p>
 
                   <div className="flex flex-col gap-3">
@@ -1523,7 +1519,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                       disabled={orderItems.length === 0}
                     >
                       <RefreshCw className="mr-2 h-5 w-5" />
-                      Procesar cortes y calcular precio
+                      Procesar cortes y calcular precio Viprou
                     </Button>
                   </div>
                 </div>
@@ -1536,7 +1532,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
         {orderItems.length > 0 && (
           <CardFooter className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 border-t flex flex-col sm:flex-row gap-3 justify-between items-center">
             <div>
-              <span className="text-gray-700 mr-2 block sm:inline">Precio Total Estimado:</span>
+              <span className="text-gray-700 mr-2 block sm:inline">Precio Total Viprou Estimado:</span>
               <span className="font-bold text-lg text-green-700">
                 ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
               </span>
@@ -1548,7 +1544,7 @@ ${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}
                 disabled={orderItems.length === 0}
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Procesar cortes y calcular precio
+                Procesar cortes y calcular precio Viprou
               </Button>
             </div>
           </CardFooter>
