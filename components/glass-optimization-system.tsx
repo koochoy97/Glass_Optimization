@@ -27,7 +27,19 @@ async function sendToWebhook(orderItems: OrderItem[], origen: string) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ orderItems, origen: origen }),
+      body: JSON.stringify({
+        orderItems,
+        origen: origen,
+        // Incluir información adicional si está disponible en los items
+        customerInfo:
+          orderItems.length > 0 && orderItems[0].customerName
+            ? {
+                name: orderItems[0].customerName,
+                phone: orderItems[0].customerPhone,
+                comments: orderItems[0].customerComments || "",
+              }
+            : null,
+      }),
     })
 
     if (!response.ok) {
@@ -419,12 +431,13 @@ export default function GlassOptimizationSystem() {
     // Limpiar cualquier error previo
     setError("")
 
-    // Enviar webhook al confirmar la orden con información del cliente
+    // Enviar webhook al confirmar la orden con información completa del cliente
     await sendToWebhook(
       orderItems.map((item) => ({
         ...item,
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
+        customerComments: customerComments.trim(), // Agregar comentarios
       })),
       "Orden_confirmada",
     )
