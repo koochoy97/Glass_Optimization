@@ -1,19 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { useState, useEffect, useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, Plus, Info, Trash2, TrendingDown, CheckCircle, Edit, RefreshCw, ArrowLeft } from "lucide-react"
+import { AlertCircle, Plus, Info, TrendingDown, CheckCircle, RefreshCw, ArrowLeft, Edit, Trash2 } from "lucide-react"
 import { glassTypes } from "@/lib/glass-data"
 import { procesarPedidoNuevo, obtenerInformacionHojas, reiniciarSistemaOptimizacion } from "@/lib/integration"
 import type { OrderItem } from "@/lib/calculator"
 import GlassCutVisualization from "./glass-cut-visualization"
-import SavingsNotification from "./savings-notification"
 import SystemInfo from "./system-info"
 import OrderHistory from "./order-history"
 import { saveOrder, type SavedOrder } from "@/lib/order-history"
@@ -94,6 +93,56 @@ export default function GlassOptimizationSystem() {
   const [customerName, setCustomerName] = useState("")
   const [customerPhone, setCustomerPhone] = useState("")
   const [customerComments, setCustomerComments] = useState("")
+
+  // Función para organizar los tipos de vidrio en secciones
+  const organizedGlassTypes = useMemo(() => {
+    // Función para detectar si un producto es incoloro
+    const isIncoloro = (glassName: string) => {
+      return glassName.toLowerCase().includes("incoloro")
+    }
+
+    // Separar productos incoloros de no incoloros
+    const incoloroProducts = glassTypes.filter((glass) => isIncoloro(glass.name))
+    const nonIncoloroProducts = glassTypes.filter((glass) => !isIncoloro(glass.name))
+
+    // Organizar productos incoloros por categorías (solo los que se pueden vender por media hoja)
+    const incoloroHalfSheetProducts = incoloroProducts.filter((glass) => canSellHalfSheet(glass.name))
+
+    const floatIncoloroProducts = incoloroHalfSheetProducts
+      .filter((glass) => glass.name.toLowerCase().includes("float"))
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    const laminadoIncoloroProducts = incoloroHalfSheetProducts
+      .filter((glass) => glass.name.toLowerCase().includes("laminado"))
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    const espejoIncoloroProducts = incoloroHalfSheetProducts
+      .filter((glass) => glass.name.toLowerCase().includes("espejo"))
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    // Otros productos incoloros de media hoja (que no sean Float, Laminado o Espejo)
+    const otherIncoloroHalfSheetProducts = incoloroHalfSheetProducts
+      .filter(
+        (glass) =>
+          !glass.name.toLowerCase().includes("float") &&
+          !glass.name.toLowerCase().includes("laminado") &&
+          !glass.name.toLowerCase().includes("espejo"),
+      )
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    // Todos los productos no incoloros (ordenados alfabéticamente)
+    const sortedNonIncoloroProducts = nonIncoloroProducts.sort((a, b) => a.name.localeCompare(b.name))
+
+    return {
+      incoloroHalfSheetProducts: [
+        ...floatIncoloroProducts,
+        ...laminadoIncoloroProducts,
+        ...espejoIncoloroProducts,
+        ...otherIncoloroHalfSheetProducts,
+      ],
+      nonIncoloroProducts: sortedNonIncoloroProducts,
+    }
+  }, [])
 
   // Add error boundary and clean up any potential Web3 references
   useEffect(() => {
@@ -275,94 +324,6 @@ export default function GlassOptimizationSystem() {
 
     // Calcular también el precio sin optimización
     calculateNonOptimizedPrice()
-  }
-
-  // Función para normalizar nombres de tipos de vidrio para comparación
-  const normalizeGlassType = (type: string): string => {
-    if (!type) return ""
-    return type.toLowerCase().replace(/\s+/g, "").replace(/[+]/g, "mas").replace(/[()]/g, "")
-  }
-
-  // Función para encontrar el tipo de vidrio y su precio por m²
-  const findGlassTypeAndPrice = (tipoVidrio) => {
-    if (!tipoVidrio) {
-      console.warn("Tipo de vidrio no especificado")
-      return { glassType: null, pricePerM2: 0, matchedGlassType: null }
-    }
-
-    console.log(`Buscando tipo de vidrio: "${tipoVidrio}"`)
-
-    // Normalizar el tipo de vidrio para búsqueda
-    const normalizeGlassType = (type) => {
-      if (!type) return ""
-      return type.toLowerCase().replace(/\s+/g, "").replace(/[+]/g, "mas").replace(/[()]/g, "").replace(/mm/g, "")
-    }
-
-    const normalizedSearchType = normalizeGlassType(tipoVidrio)
-    console.log(`Tipo normalizado para búsqueda: "${normalizedSearchType}"`)
-
-    // Buscar coincidencia exacta primero
-    let glassType = glassTypes.find((glass) => glass.name === tipoVidrio)
-
-    // Si no hay coincidencia exacta, buscar por normalización
-    if (!glassType) {
-      glassType = glassTypes.find((glass) => normalizeGlassType(glass.name) === normalizedSearchType)
-    }
-
-    // Si aún no hay coincidencia, buscar por coincidencia parcial
-    if (!glassType) {
-      // Imprimir todos los tipos normalizados para depuración
-      console.log("Tipos de vidrio disponibles (normalizados):")
-      glassTypes.forEach((glass) => {
-        console.log(`- "${glass.name}" -> "${normalizeGlassType(glass.name)}"`)
-      })
-
-      // Buscar por coincidencia parcial más flexible
-      glassType = glassTypes.find((glass) => {
-        const normalizedGlassName = normalizeGlassType(glass.name)
-        return (
-          normalizedGlassName.includes(normalizedSearchType) ||
-          normalizedSearchType.includes(normalizedGlassName) ||
-          // Comprobar si contiene las mismas palabras clave
-          (normalizedGlassName.includes("float") &&
-            normalizedSearchType.includes("float") &&
-            normalizedGlassName.includes("incoloro") &&
-            normalizedSearchType.includes("incoloro"))
-        )
-      })
-    }
-
-    if (!glassType) {
-      console.warn(`No se encontró tipo de vidrio para: "${tipoVidrio}"`)
-
-      // Buscar un tipo de vidrio por defecto como fallback
-      const defaultGlassType = glassTypes.find(
-        (glass) => glass.name.includes("Float") && glass.name.includes("4mm") && glass.name.includes("Incoloro"),
-      )
-
-      if (defaultGlassType) {
-        console.log(`Usando tipo de vidrio por defecto: "${defaultGlassType.name}"`)
-        return {
-          glassType: defaultGlassType,
-          pricePerM2: defaultGlassType.price,
-          matchedGlassType: defaultGlassType.name + " (por defecto)",
-        }
-      }
-
-      return { glassType: null, pricePerM2: 0, matchedGlassType: null }
-    }
-
-    // El precio ya está en precio por m²
-    const pricePerM2 = glassType.price
-
-    console.log(`Tipo encontrado: "${glassType.name}"`)
-    console.log(`Precio por m²: ${pricePerM2.toFixed(2)}`)
-
-    return {
-      glassType,
-      pricePerM2,
-      matchedGlassType: glassType.name,
-    }
   }
 
   const handleProcessOrder = async () => {
@@ -947,43 +908,10 @@ ${customerComments.trim()}`
     )
   }
 
-  // Filtrar hojas por tipo de vidrio
-  const filteredSheets =
-    sheetInfo?.hojas?.filter(
-      (hoja: any) => selectedGlassTypeFilter === null || hoja.tipoVidrio === selectedGlassTypeFilter,
-    ) || []
-
-  // Obtener tipos de vidrio únicos de las hojas
-  const uniqueGlassTypes = sheetInfo?.hojas ? [...new Set(sheetInfo.hojas.map((h: any) => h.tipoVidrio))] : []
-
   // Encontrar el tipo de vidrio seleccionado para obtener sus dimensiones
   const selectedGlassTypeInfo = glassTypes.find((glass) => glass.name === selectedGlassType)
   const glassWidth = selectedGlassTypeInfo?.width || 0
   const glassHeight = selectedGlassTypeInfo?.height || 0
-
-  // Calcular el precio del corte actual
-  const calculateCurrentCutPrice = () => {
-    if (!selectedGlassTypeInfo || !width || !height) return 0
-
-    const widthValue = Number.parseFloat(width)
-    const heightValue = Number.parseFloat(height)
-    const quantityValue = Number.parseInt(quantity) || 1
-
-    if (isNaN(widthValue) || isNaN(heightValue)) return 0
-
-    // El precio ya está en precio por m²
-    const pricePerM2 = selectedGlassTypeInfo.price
-
-    // Área de una hoja completa en m²
-    const sheetArea = (selectedGlassTypeInfo.width / 1000) * (selectedGlassTypeInfo.height / 1000)
-
-    // Cobrar hoja completa por cada corte
-    const totalPrice = sheetArea * pricePerM2 * quantityValue
-
-    return totalPrice
-  }
-
-  const currentCutPrice = calculateCurrentCutPrice()
 
   // Calcular el ahorro y porcentaje de ahorro
   const savings = nonOptimizedPrice - totalPrice
@@ -1068,23 +996,55 @@ ${customerComments.trim()}`
                         <SelectValue placeholder="Seleccione un tipo de vidrio" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[40vh]">
-                        {glassTypes.map((glass) => (
-                          <SelectItem key={glass.name} value={glass.name} className="py-3">
-                            <div className="flex flex-col w-full">
-                              <div className="font-medium text-sm leading-tight">{glass.name}</div>
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mt-1">
-                                <div className="text-xs text-gray-600">
-                                  Precio Viprou: ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
-                                </div>
-                                {canSellHalfSheet(glass.name) && (
-                                  <div className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full w-fit">
-                                    ½ hoja disponible
-                                  </div>
-                                )}
-                              </div>
+                        {/* Primera sección: Vidrios incoloros que se pueden vender por media hoja */}
+                        {organizedGlassTypes.incoloroHalfSheetProducts.length > 0 && (
+                          <>
+                            <div className="px-2 py-2 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200 sticky top-0 z-10">
+                              🔷 Vidrios que se pueden vender por media hoja
                             </div>
-                          </SelectItem>
-                        ))}
+                            {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
+                              <SelectItem key={glass.name} value={glass.name} className="py-3">
+                                <div className="flex flex-col w-full">
+                                  <div className="font-medium text-sm leading-tight">{glass.name}</div>
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mt-1">
+                                    <div className="text-xs text-gray-600">
+                                      Precio Viprou: $
+                                      {glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
+                                    </div>
+                                    <div className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full w-fit">
+                                      ½ hoja disponible
+                                    </div>
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+
+                        {/* Segunda sección: Vidrios que se venden por hoja entera */}
+                        {organizedGlassTypes.nonIncoloroProducts.length > 0 && (
+                          <>
+                            <div className="px-2 py-2 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 sticky top-0 z-10 mt-1">
+                              🔶 Vidrios que se venden por hoja entera
+                            </div>
+                            {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
+                              <SelectItem key={glass.name} value={glass.name} className="py-3">
+                                <div className="flex flex-col w-full">
+                                  <div className="font-medium text-sm leading-tight">{glass.name}</div>
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mt-1">
+                                    <div className="text-xs text-gray-600">
+                                      Precio Viprou: $
+                                      {glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
+                                    </div>
+                                    <div className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full w-fit">
+                                      Solo hoja completa
+                                    </div>
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1355,76 +1315,70 @@ ${customerComments.trim()}`
                                       value={item.glassType}
                                       onValueChange={(value) => handleChangeGlassType(item.id, value)}
                                     >
-                                      <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm min-w-[160px] sm:min-w-[180px]">
-                                        <SelectValue>
-                                          <span className="truncate">{item.glassType}</span>
-                                        </SelectValue>
+                                      <SelectTrigger className="h-8 text-xs sm:text-sm">
+                                        <SelectValue />
                                       </SelectTrigger>
-                                      <SelectContent>
-                                        {glassTypes.map((glass) => (
-                                          <SelectItem key={glass.name} value={glass.name} className="py-2">
-                                            <div className="flex flex-col w-full">
-                                              <div className="font-medium text-sm leading-tight">{glass.name}</div>
-                                              <div className="flex justify-between items-center mt-0.5">
-                                                <div className="text-xs text-gray-600">
-                                                  Viprou: $
-                                                  {glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-                                                  /m²
-                                                </div>
-                                                {canSellHalfSheet(glass.name) && (
-                                                  <div className="text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded text-center">
-                                                    ½
-                                                  </div>
-                                                )}
-                                              </div>
+                                      <SelectContent className="max-h-[30vh]">
+                                        {/* Primera sección: Vidrios incoloros que se pueden vender por media hoja */}
+                                        {organizedGlassTypes.incoloroHalfSheetProducts.length > 0 && (
+                                          <>
+                                            <div className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200 sticky top-0 z-10">
+                                              🔷 Media hoja disponible
                                             </div>
-                                          </SelectItem>
-                                        ))}
+                                            {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
+                                              <SelectItem key={glass.name} value={glass.name} className="py-2">
+                                                <div className="text-xs sm:text-sm">{glass.name}</div>
+                                              </SelectItem>
+                                            ))}
+                                          </>
+                                        )}
+
+                                        {/* Segunda sección: Vidrios que se venden por hoja entera */}
+                                        {organizedGlassTypes.nonIncoloroProducts.length > 0 && (
+                                          <>
+                                            <div className="px-2 py-1 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 sticky top-0 z-10 mt-1">
+                                              🔶 Solo hoja completa
+                                            </div>
+                                            {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
+                                              <SelectItem key={glass.name} value={glass.name} className="py-2">
+                                                <div className="text-xs sm:text-sm">{glass.name}</div>
+                                              </SelectItem>
+                                            ))}
+                                          </>
+                                        )}
                                       </SelectContent>
                                     </Select>
                                   </TableCell>
-                                  <TableCell className="py-2 sm:py-3 whitespace-nowrap font-medium text-xs sm:text-sm">
-                                    <div className="flex flex-col">
-                                      <span>
-                                        {item.width}×{item.height}
-                                      </span>
-                                      <span className="text-xs text-gray-500">mm</span>
-                                    </div>
+                                  <TableCell className="py-2 sm:py-3 text-xs sm:text-sm">
+                                    {item.width}mm x {item.height}mm
                                   </TableCell>
-                                  <TableCell className="py-2 sm:py-3 whitespace-nowrap text-center font-medium text-xs sm:text-sm">
+                                  <TableCell className="py-2 sm:py-3 text-xs sm:text-sm text-center">
                                     {item.quantity}
                                   </TableCell>
-                                  <TableCell className="py-2 sm:py-3 whitespace-nowrap font-bold text-green-600 text-xs sm:text-sm">
-                                    <div className="flex flex-col">
-                                      <span>
-                                        $
-                                        {price.toLocaleString("es-AR", {
-                                          minimumFractionDigits: 0,
-                                          maximumFractionDigits: 0,
-                                        })}
-                                      </span>
-                                    </div>
+                                  <TableCell className="py-2 sm:py-3 text-xs sm:text-sm">
+                                    $
+                                    {price.toLocaleString("es-AR", {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}
                                   </TableCell>
                                   <TableCell className="py-2 sm:py-3">
-                                    <div className="flex gap-1 sm:gap-2">
+                                    <div className="flex gap-1">
                                       <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handleEditItem(item.id)}
-                                        className="h-7 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm text-blue-600 border-blue-300 hover:bg-blue-50 font-medium transition-all duration-200 hover:scale-105"
+                                        className="h-7 w-7 p-0"
                                       >
-                                        <Edit className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                                        <span className="sm:hidden text-xs ml-1">Editar</span>
-                                        <span className="hidden sm:inline">Editar</span>
+                                        <Edit className="h-3 w-3" />
                                       </Button>
                                       <Button
-                                        variant="ghost"
+                                        variant="outline"
                                         size="sm"
                                         onClick={() => handleRemoveItem(item.id)}
-                                        className="h-7 w-7 sm:h-9 sm:w-9 p-0 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-105"
-                                        title="Eliminar corte"
+                                        className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
                                       >
-                                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                                        <Trash2 className="h-3 w-3" />
                                       </Button>
                                     </div>
                                   </TableCell>
@@ -1437,76 +1391,42 @@ ${customerComments.trim()}`
                     </div>
                   </div>
 
-                  <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-100">
-                    <p className="text-blue-700 text-sm flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Viprou ha registrado {orderItems.length} corte{orderItems.length !== 1 ? "s" : ""} en tu pedido.
-                      ¿Deseas procesar la optimización ahora?
-                    </p>
+                  <div className="mt-4 space-y-3">
+                    <div className="bg-green-50 p-3 rounded-md border border-green-200">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-green-800">Total Viprou optimizado:</span>
+                        <span className="text-xl font-bold text-green-700">
+                          ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleProcessOrder}
+                      className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-base"
+                    >
+                      <CheckCircle className="mr-2 h-5 w-5" />
+                      Procesar Pedido
+                    </Button>
                   </div>
                 </div>
               )}
 
-              {orderItems.length > 0 && (
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-center mb-3">
-                    <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
-                      3
-                    </div>
-                    <h3 className="font-medium">Procesá tu pedido</h3>
+              {orderItems.length === 0 && (
+                <div className="bg-gray-50 p-8 rounded-lg border border-gray-200 text-center">
+                  <div className="text-gray-500 mb-2">
+                    <Info className="h-8 w-8 mx-auto mb-2" />
                   </div>
-
-                  <p className="text-sm text-gray-600 mb-4">
-                    Viprou procesará tu pedido para ofrecerte el mejor precio con la distribución óptima de cortes.
+                  <h3 className="font-medium text-gray-700 mb-1">No hay cortes cargados</h3>
+                  <p className="text-sm text-gray-500">
+                    Agregá cortes usando el formulario de la izquierda para comenzar tu pedido.
                   </p>
-
-                  <div className="flex flex-col gap-3">
-                    <Button
-                      onClick={handleProcessOrder}
-                      className="w-full py-4 text-lg bg-green-600 hover:bg-green-700 shadow-md"
-                      disabled={orderItems.length === 0}
-                    >
-                      <RefreshCw className="mr-2 h-5 w-5" />
-                      Procesar cortes y calcular precio Viprou
-                    </Button>
-                  </div>
                 </div>
               )}
             </div>
           </div>
         </CardContent>
-
-        {/* Barra de acciones fija en la parte inferior */}
-        {orderItems.length > 0 && (
-          <CardFooter className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 border-t flex flex-col sm:flex-row gap-3 justify-between items-center">
-            <div>
-              <span className="text-gray-700 mr-2 block sm:inline">Precio Total Viprou Estimado:</span>
-              <span className="font-bold text-lg text-green-700">
-                ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-            <div className="flex gap-3 w-full sm:w-auto">
-              <Button
-                onClick={handleProcessOrder}
-                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
-                disabled={orderItems.length === 0}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Procesar cortes y calcular precio Viprou
-              </Button>
-            </div>
-          </CardFooter>
-        )}
       </Card>
-
-      {/* Notificación de ahorro */}
-      {showSavingsNotification && (
-        <SavingsNotification
-          originalPrice={nonOptimizedPrice}
-          optimizedPrice={totalOptimizedPrice}
-          onClose={() => setShowSavingsNotification(false)}
-        />
-      )}
     </div>
   )
 }
