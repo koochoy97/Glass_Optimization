@@ -93,17 +93,24 @@ export default function GlassOptimizationSystem() {
   const [customerName, setCustomerName] = useState("")
   const [customerPhone, setCustomerPhone] = useState("")
   const [customerComments, setCustomerComments] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
 
-  // Función para organizar los tipos de vidrio en secciones
+  // Función para organizar los tipos de vidrio en secciones con filtrado
   const organizedGlassTypes = useMemo(() => {
     // Función para detectar si un producto es incoloro
     const isIncoloro = (glassName: string) => {
       return glassName.toLowerCase().includes("incoloro")
     }
 
+    // Función para filtrar por término de búsqueda
+    const matchesSearch = (glassName: string) => {
+      if (!searchTerm.trim()) return true
+      return glassName.toLowerCase().includes(searchTerm.toLowerCase().trim())
+    }
+
     // Separar productos incoloros de no incoloros
-    const incoloroProducts = glassTypes.filter((glass) => isIncoloro(glass.name))
-    const nonIncoloroProducts = glassTypes.filter((glass) => !isIncoloro(glass.name))
+    const incoloroProducts = glassTypes.filter((glass) => isIncoloro(glass.name) && matchesSearch(glass.name))
+    const nonIncoloroProducts = glassTypes.filter((glass) => !isIncoloro(glass.name) && matchesSearch(glass.name))
 
     // Organizar productos incoloros por categorías (solo los que se pueden vender por media hoja)
     const incoloroHalfSheetProducts = incoloroProducts.filter((glass) => canSellHalfSheet(glass.name))
@@ -141,8 +148,9 @@ export default function GlassOptimizationSystem() {
         ...otherIncoloroHalfSheetProducts,
       ],
       nonIncoloroProducts: sortedNonIncoloroProducts,
+      hasResults: incoloroHalfSheetProducts.length > 0 || sortedNonIncoloroProducts.length > 0,
     }
-  }, [])
+  }, [searchTerm])
 
   // Add error boundary and clean up any potential Web3 references
   useEffect(() => {
@@ -996,10 +1004,45 @@ ${customerComments.trim()}`
                         <SelectValue placeholder="Seleccione un tipo de vidrio" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[40vh]">
+                        {/* Campo de búsqueda */}
+                        <div className="sticky top-0 z-20 bg-white border-b border-gray-200 p-2">
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="Buscar tipo de vidrio…"
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-8"
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            />
+                            <svg
+                              className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* Mostrar mensaje si no hay resultados */}
+                        {!organizedGlassTypes.hasResults && searchTerm.trim() && (
+                          <div className="p-4 text-center text-gray-500 text-sm">
+                            No se encontraron productos que coincidan con "{searchTerm}"
+                          </div>
+                        )}
+
                         {/* Primera sección: Vidrios incoloros que se pueden vender por media hoja */}
                         {organizedGlassTypes.incoloroHalfSheetProducts.length > 0 && (
                           <>
-                            <div className="px-2 py-2 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200 sticky top-0 z-10">
+                            <div className="px-2 py-2 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200 sticky top-[60px] z-10">
                               🔷 Vidrios que se pueden vender por media hoja
                             </div>
                             {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
@@ -1024,7 +1067,7 @@ ${customerComments.trim()}`
                         {/* Segunda sección: Vidrios que se venden por hoja entera */}
                         {organizedGlassTypes.nonIncoloroProducts.length > 0 && (
                           <>
-                            <div className="px-2 py-2 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 sticky top-0 z-10 mt-1">
+                            <div className="px-2 py-2 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 sticky top-[60px] z-10 mt-1">
                               🔶 Vidrios que se venden por hoja entera
                             </div>
                             {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
@@ -1319,10 +1362,45 @@ ${customerComments.trim()}`
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent className="max-h-[30vh]">
+                                        {/* Campo de búsqueda */}
+                                        <div className="sticky top-0 z-20 bg-white border-b border-gray-200 p-2">
+                                          <div className="relative">
+                                            <input
+                                              type="text"
+                                              placeholder="Buscar tipo de vidrio…"
+                                              value={searchTerm}
+                                              onChange={(e) => setSearchTerm(e.target.value)}
+                                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-8"
+                                              onClick={(e) => e.stopPropagation()}
+                                              onKeyDown={(e) => e.stopPropagation()}
+                                            />
+                                            <svg
+                                              className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                              />
+                                            </svg>
+                                          </div>
+                                        </div>
+
+                                        {/* Mostrar mensaje si no hay resultados */}
+                                        {!organizedGlassTypes.hasResults && searchTerm.trim() && (
+                                          <div className="p-4 text-center text-gray-500 text-sm">
+                                            No se encontraron productos que coincidan con "{searchTerm}"
+                                          </div>
+                                        )}
+
                                         {/* Primera sección: Vidrios incoloros que se pueden vender por media hoja */}
                                         {organizedGlassTypes.incoloroHalfSheetProducts.length > 0 && (
                                           <>
-                                            <div className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200 sticky top-0 z-10">
+                                            <div className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200 sticky top-[60px] z-10">
                                               🔷 Media hoja disponible
                                             </div>
                                             {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
@@ -1336,7 +1414,7 @@ ${customerComments.trim()}`
                                         {/* Segunda sección: Vidrios que se venden por hoja entera */}
                                         {organizedGlassTypes.nonIncoloroProducts.length > 0 && (
                                           <>
-                                            <div className="px-2 py-1 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 sticky top-0 z-10 mt-1">
+                                            <div className="px-2 py-1 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 sticky top-[60px] z-10 mt-1">
                                               🔶 Solo hoja completa
                                             </div>
                                             {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
