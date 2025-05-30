@@ -1418,9 +1418,7 @@ ${customerComments.trim()}`
                     <Info className="h-8 w-8 mx-auto mb-2" />
                   </div>
                   <h3 className="font-medium text-gray-700 mb-1">No hay cortes cargados</h3>
-                  <p className="text-sm text-gray-500">
-                    Agregá cortes usando el formulario de la izquierda para comenzar tu pedido.
-                  </p>
+                  <p className="text-sm text-gray-500">Agregá cortes usando el formulario para comenzar tu pedido.</p>
                 </div>
               )}
             </div>
