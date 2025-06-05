@@ -95,6 +95,10 @@ export default function GlassOptimizationSystem() {
   const [customerComments, setCustomerComments] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
 
+  // Estados para tracking de abandono
+  const [orderProcessedTime, setOrderProcessedTime] = useState<number | null>(null)
+  const [hasTrackedAbandonment, setHasTrackedAbandonment] = useState(false)
+
   // Función para organizar los tipos de vidrio en secciones con filtrado
   const organizedGlassTypes = useMemo(() => {
     // Función para detectar si un producto es incoloro
@@ -158,8 +162,88 @@ export default function GlassOptimizationSystem() {
     if (typeof window !== "undefined") {
       // Clear any potential Web3 listeners
       window.removeEventListener?.("ethereum", () => {})
+
+      // Track page load event
+      if (window.trackEvent) {
+        window.trackEvent("viprou_page_loaded", {
+          event_category: "engagement",
+          event_label: "calculadora_vidrios",
+          page_title: "Viprou - Calculadora de Vidrios",
+          timestamp: new Date().toISOString(),
+        })
+      }
     }
   }, [])
+
+  // Efecto para detectar abandono cuando el usuario está en la vista de detalles del pedido
+  useEffect(() => {
+    if (!showOrderDetails || !orderProcessedTime || hasTrackedAbandonment) {
+      return
+    }
+
+    // Función para trackear abandono
+    const trackAbandonment = () => {
+      if (window.trackEvent && !hasTrackedAbandonment) {
+        const timeSpent = Date.now() - orderProcessedTime
+        const savings = Math.max(0, nonOptimizedPrice - totalPrice)
+        const savingsPercentage = nonOptimizedPrice > 0 ? (savings / nonOptimizedPrice) * 100 : 0
+
+        window.trackEvent("viprou_order_abandoned", {
+          event_category: "abandonment",
+          event_label: "pedido_abandonado",
+          value: Math.round(totalPrice),
+          currency: "ARS",
+          time_spent_seconds: Math.round(timeSpent / 1000),
+          items_count: orderItems.length,
+          total_cuts: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+          optimized_price: Math.round(totalPrice),
+          savings_amount: Math.round(savings),
+          savings_percentage: Math.round(savingsPercentage * 100) / 100,
+          abandonment_stage: "order_review",
+          has_contact_data: !!(customerName.trim() && customerPhone.trim()),
+          timestamp: new Date().toISOString(),
+        })
+
+        setHasTrackedAbandonment(true)
+      }
+    }
+
+    // Detectar cuando el usuario sale de la página o cierra la pestaña
+    const handleBeforeUnload = () => {
+      trackAbandonment()
+    }
+
+    // Detectar cuando el usuario cambia de pestaña (pierde el foco)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Esperar un poco antes de trackear abandono para evitar falsos positivos
+        setTimeout(() => {
+          if (document.hidden && showOrderDetails && !hasTrackedAbandonment) {
+            trackAbandonment()
+          }
+        }, 5000) // 5 segundos de inactividad
+      }
+    }
+
+    // Agregar event listeners
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+  }, [
+    showOrderDetails,
+    orderProcessedTime,
+    hasTrackedAbandonment,
+    totalPrice,
+    nonOptimizedPrice,
+    orderItems,
+    customerName,
+    customerPhone,
+  ])
 
   // Cargar información de hojas al iniciar
   useEffect(() => {
@@ -372,6 +456,31 @@ export default function GlassOptimizationSystem() {
         setShowOrderDetails(true)
         setNonOptimizedPrice(currentNonOptimizedPrice)
 
+        // Marcar el tiempo cuando se procesó el pedido para tracking de abandono
+        setOrderProcessedTime(Date.now())
+        setHasTrackedAbandonment(false)
+
+        // Track evento de procesamiento de pedido
+        if (window.trackEvent) {
+          const savings = Math.max(0, currentNonOptimizedPrice - optimizedPrice)
+          const savingsPercentage = currentNonOptimizedPrice > 0 ? (savings / currentNonOptimizedPrice) * 100 : 0
+
+          window.trackEvent("viprou_order_processed", {
+            event_category: "conversion",
+            event_label: "pedido_procesado",
+            value: Math.round(optimizedPrice),
+            currency: "ARS",
+            items_count: orderItems.length,
+            total_cuts: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+            original_price: Math.round(currentNonOptimizedPrice),
+            optimized_price: Math.round(optimizedPrice),
+            savings_amount: Math.round(savings),
+            savings_percentage: Math.round(savingsPercentage * 100) / 100,
+            glass_types: [...new Set(orderItems.map((item) => item.glassType))].length,
+            timestamp: new Date().toISOString(),
+          })
+        }
+
         // Enviar webhook al mostrar el resumen
         sendToWebhook(orderItems, "Cargar_pagina_resumen")
       }, 500)
@@ -399,6 +508,35 @@ export default function GlassOptimizationSystem() {
 
     // Limpiar cualquier error previo
     setError("")
+
+    // Track evento de confirmación de pedido ANTES de proceder
+    if (window.trackEvent) {
+      const timeSpent = orderProcessedTime ? Date.now() - orderProcessedTime : 0
+      const savings = Math.max(0, nonOptimizedPrice - totalPrice)
+      const savingsPercentage = nonOptimizedPrice > 0 ? (savings / nonOptimizedPrice) * 100 : 0
+
+      window.trackEvent("viprou_order_confirmed", {
+        event_category: "conversion",
+        event_label: "pedido_confirmado",
+        value: Math.round(totalPrice),
+        currency: "ARS",
+        items_count: orderItems.length,
+        total_cuts: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+        optimized_price: Math.round(totalPrice),
+        original_price: Math.round(nonOptimizedPrice),
+        savings_amount: Math.round(savings),
+        savings_percentage: Math.round(savingsPercentage * 100) / 100,
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim(),
+        has_comments: !!customerComments.trim(),
+        time_to_confirm_seconds: Math.round(timeSpent / 1000),
+        glass_types: [...new Set(orderItems.map((item) => item.glassType))].length,
+        timestamp: new Date().toISOString(),
+      })
+
+      // Marcar que ya no debe trackear abandono
+      setHasTrackedAbandonment(true)
+    }
 
     // Enviar webhook al confirmar la orden con información completa del cliente
     await sendToWebhook(
@@ -485,6 +623,10 @@ ${customerComments.trim()}`
       setSelectedGlassTypeFilter(null)
       setShowOrderDetails(false)
       setError("")
+
+      // Reiniciar estados de tracking
+      setOrderProcessedTime(null)
+      setHasTrackedAbandonment(false)
 
       // Mostrar mensaje de confirmación
       setTimeout(() => {
@@ -638,6 +780,9 @@ ${customerComments.trim()}`
                   setCustomerName("")
                   setCustomerPhone("")
                   setCustomerComments("")
+                  // Reiniciar estados de tracking
+                  setOrderProcessedTime(null)
+                  setHasTrackedAbandonment(false)
                 }}
                 className="bg-blue-600 hover:bg-blue-700"
               >
@@ -885,7 +1030,12 @@ ${customerComments.trim()}`
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   variant="outline"
-                  onClick={() => setShowOrderDetails(false)}
+                  onClick={() => {
+                    setShowOrderDetails(false)
+                    // Reiniciar tracking de abandono al volver
+                    setOrderProcessedTime(null)
+                    setHasTrackedAbandonment(false)
+                  }}
                   className="h-12 text-base order-2 sm:order-1"
                 >
                   <ArrowLeft className="mr-2 h-5 w-5" /> Volver y modificar
