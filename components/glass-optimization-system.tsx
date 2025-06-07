@@ -481,6 +481,11 @@ export default function GlassOptimizationSystem() {
           });
 
   console.log("Google Ads Conversion sent");
+
+  if (typeof window !== 'undefined' && window.fbq) {
+  window.fbq('track', 'InitiateCheckout')
+}
+
 }
 
 
@@ -512,7 +517,6 @@ export default function GlassOptimizationSystem() {
     // Limpiar cualquier error previo
     setError("")
 
-    // Track evento de confirmación de pedido ANTES de proceder
     if (window.gtag) {
       const timeSpent = orderProcessedTime ? Date.now() - orderProcessedTime : 0;
       const savings = Math.max(0, nonOptimizedPrice - totalPrice);
@@ -542,6 +546,14 @@ export default function GlassOptimizationSystem() {
       console.log("Google Ads Conversion: viprou_order_confirmed enviada");
       setHasTrackedAbandonment(true);
     }
+
+        if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'Purchase', {
+        value: totalPrice, // Monto de la compra
+        currency: 'ARS'
+      });
+    }
+
 
 
     // Enviar webhook al confirmar la orden con información completa del cliente
