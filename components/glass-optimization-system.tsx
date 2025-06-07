@@ -164,14 +164,15 @@ export default function GlassOptimizationSystem() {
       window.removeEventListener?.("ethereum", () => {})
 
       // Track page load event
-      if (window.trackEvent) {
-        window.trackEvent("viprou_page_loaded", {
-          event_category: "engagement",
-          event_label: "calculadora_vidrios",
-          page_title: "Viprou - Calculadora de Vidrios",
-          timestamp: new Date().toISOString(),
-        })
-      }
+        if (typeof window !== "undefined" && window.gtag) {
+          window.gtag('event', 'conversion', {
+            send_to: 'AW-17150749356/pC4tCK2RudUaEKzVjvI_',
+            event_category: "engagement",
+            event_label: "calculadora_vidrios",
+            page_title: "Viprou - Calculadora de Vidrios",
+            timestamp: new Date().toISOString(),
+          });
+        }
     }
   }, [])
 

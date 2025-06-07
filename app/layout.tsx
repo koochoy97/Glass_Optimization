@@ -28,22 +28,6 @@ export default function RootLayout({
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'AW-17150749356');
-            
-            // Evento de carga de página
-            gtag('event', 'page_view', {
-              page_title: 'Viprou - Cotización rápida de vidrios',
-              page_location: window.location.href,
-              send_to: 'AW-17150749356'
-            });
-            
-            // Función global para eventos personalizados
-            window.trackEvent = function(eventName, parameters = {}) {
-              gtag('event', eventName, {
-                ...parameters,
-                send_to: 'AW-17150749356'
-              });
-              console.log('Google Ads Event:', eventName, parameters);
-            };
           `}
         </Script>
       </head>
