@@ -462,14 +462,13 @@ export default function GlassOptimizationSystem() {
         setHasTrackedAbandonment(false)
 
         // Track evento de procesamiento de pedido
-        if (window.trackEvent) {
-          const savings = Math.max(0, currentNonOptimizedPrice - optimizedPrice)
-          const savingsPercentage = currentNonOptimizedPrice > 0 ? (savings / currentNonOptimizedPrice) * 100 : 0
+        if (window.gtag) {
+          const savings = Math.max(0, currentNonOptimizedPrice - optimizedPrice);
+          const savingsPercentage = currentNonOptimizedPrice > 0 ? (savings / currentNonOptimizedPrice) * 100 : 0;
 
-          window.trackEvent("viprou_order_processed", {
-            event_category: "conversion",
-            event_label: "pedido_procesado",
-            value: Math.round(optimizedPrice),
+          window.gtag("event", "conversion", {
+            send_to: "AW-17150749356/68KgCKvMytUaEKzVjvI_",
+            value: Math.round(optimizedPrice), // O usa 1.0 si así lo definiste en la conversión
             currency: "ARS",
             items_count: orderItems.length,
             total_cuts: orderItems.reduce((sum, item) => sum + item.quantity, 0),
@@ -479,8 +478,11 @@ export default function GlassOptimizationSystem() {
             savings_percentage: Math.round(savingsPercentage * 100) / 100,
             glass_types: [...new Set(orderItems.map((item) => item.glassType))].length,
             timestamp: new Date().toISOString(),
-          })
-        }
+          });
+
+  console.log("Google Ads Conversion sent");
+}
+
 
         // Enviar webhook al mostrar el resumen
         sendToWebhook(orderItems, "Cargar_pagina_resumen")
@@ -511,16 +513,18 @@ export default function GlassOptimizationSystem() {
     setError("")
 
     // Track evento de confirmación de pedido ANTES de proceder
-    if (window.trackEvent) {
-      const timeSpent = orderProcessedTime ? Date.now() - orderProcessedTime : 0
-      const savings = Math.max(0, nonOptimizedPrice - totalPrice)
-      const savingsPercentage = nonOptimizedPrice > 0 ? (savings / nonOptimizedPrice) * 100 : 0
+    if (window.gtag) {
+      const timeSpent = orderProcessedTime ? Date.now() - orderProcessedTime : 0;
+      const savings = Math.max(0, nonOptimizedPrice - totalPrice);
+      const savingsPercentage = nonOptimizedPrice > 0 ? (savings / nonOptimizedPrice) * 100 : 0;
 
-      window.trackEvent("viprou_order_confirmed", {
-        event_category: "conversion",
-        event_label: "pedido_confirmado",
+      window.gtag("event", "conversion", {
+        send_to: "AW-17150749356/HEKCCK7MytUaEKzVjvI_",
         value: Math.round(totalPrice),
         currency: "ARS",
+        transaction_id: "", // Puedes generar un ID único si quieres hacer seguimiento por compra
+
+        // Campos adicionales (opcional, útiles para remarketing o GTM si los capturas)
         items_count: orderItems.length,
         total_cuts: orderItems.reduce((sum, item) => sum + item.quantity, 0),
         optimized_price: Math.round(totalPrice),
@@ -533,11 +537,12 @@ export default function GlassOptimizationSystem() {
         time_to_confirm_seconds: Math.round(timeSpent / 1000),
         glass_types: [...new Set(orderItems.map((item) => item.glassType))].length,
         timestamp: new Date().toISOString(),
-      })
+      });
 
-      // Marcar que ya no debe trackear abandono
-      setHasTrackedAbandonment(true)
+      console.log("Google Ads Conversion: viprou_order_confirmed enviada");
+      setHasTrackedAbandonment(true);
     }
+
 
     // Enviar webhook al confirmar la orden con información completa del cliente
     await sendToWebhook(
