@@ -164,15 +164,15 @@ export default function GlassOptimizationSystem() {
       window.removeEventListener?.("ethereum", () => {})
 
       // Track page load event
-        if (typeof window !== "undefined" && window.gtag) {
-          window.gtag('event', 'conversion', {
-            send_to: 'AW-17150749356/pC4tCK2RudUaEKzVjvI_',
-            event_category: "engagement",
-            event_label: "calculadora_vidrios",
-            page_title: "Viprou - Calculadora de Vidrios",
-            timestamp: new Date().toISOString(),
-          });
-        }
+      if (typeof window !== "undefined" && window.gtag) {
+        window.gtag("event", "conversion", {
+          send_to: "AW-17150749356/pC4tCK2RudUaEKzVjvI_",
+          event_category: "engagement",
+          event_label: "calculadora_vidrios",
+          page_title: "Viprou - Calculadora de Vidrios",
+          timestamp: new Date().toISOString(),
+        })
+      }
     }
   }, [])
 
@@ -463,8 +463,8 @@ export default function GlassOptimizationSystem() {
 
         // Track evento de procesamiento de pedido
         if (window.gtag) {
-          const savings = Math.max(0, currentNonOptimizedPrice - optimizedPrice);
-          const savingsPercentage = currentNonOptimizedPrice > 0 ? (savings / currentNonOptimizedPrice) * 100 : 0;
+          const savings = Math.max(0, currentNonOptimizedPrice - optimizedPrice)
+          const savingsPercentage = currentNonOptimizedPrice > 0 ? (savings / currentNonOptimizedPrice) * 100 : 0
 
           window.gtag("event", "conversion", {
             send_to: "AW-17150749356/68KgCKvMytUaEKzVjvI_",
@@ -478,16 +478,14 @@ export default function GlassOptimizationSystem() {
             savings_percentage: Math.round(savingsPercentage * 100) / 100,
             glass_types: [...new Set(orderItems.map((item) => item.glassType))].length,
             timestamp: new Date().toISOString(),
-          });
+          })
 
-  console.log("Google Ads Conversion sent");
+          console.log("Google Ads Conversion sent")
 
-  if (typeof window !== 'undefined' && window.fbq) {
-  window.fbq('track', 'InitiateCheckout')
-}
-
-}
-
+          if (typeof window !== "undefined" && window.fbq) {
+            window.fbq("track", "InitiateCheckout")
+          }
+        }
 
         // Enviar webhook al mostrar el resumen
         sendToWebhook(orderItems, "Cargar_pagina_resumen")
@@ -518,9 +516,9 @@ export default function GlassOptimizationSystem() {
     setError("")
 
     if (window.gtag) {
-      const timeSpent = orderProcessedTime ? Date.now() - orderProcessedTime : 0;
-      const savings = Math.max(0, nonOptimizedPrice - totalPrice);
-      const savingsPercentage = nonOptimizedPrice > 0 ? (savings / nonOptimizedPrice) * 100 : 0;
+      const timeSpent = orderProcessedTime ? Date.now() - orderProcessedTime : 0
+      const savings = Math.max(0, nonOptimizedPrice - totalPrice)
+      const savingsPercentage = nonOptimizedPrice > 0 ? (savings / nonOptimizedPrice) * 100 : 0
 
       window.gtag("event", "conversion", {
         send_to: "AW-17150749356/HEKCCK7MytUaEKzVjvI_",
@@ -541,20 +539,18 @@ export default function GlassOptimizationSystem() {
         time_to_confirm_seconds: Math.round(timeSpent / 1000),
         glass_types: [...new Set(orderItems.map((item) => item.glassType))].length,
         timestamp: new Date().toISOString(),
-      });
+      })
 
-      console.log("Google Ads Conversion: viprou_order_confirmed enviada");
-      setHasTrackedAbandonment(true);
+      console.log("Google Ads Conversion: viprou_order_confirmed enviada")
+      setHasTrackedAbandonment(true)
     }
 
-        if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'Purchase', {
+    if (typeof window !== "undefined" && window.fbq) {
+      window.fbq("track", "Purchase", {
         value: totalPrice, // Monto de la compra
-        currency: 'ARS'
-      });
+        currency: "ARS",
+      })
     }
-
-
 
     // Enviar webhook al confirmar la orden con información completa del cliente
     await sendToWebhook(
@@ -1168,8 +1164,8 @@ ${customerComments.trim()}`
                         }
                       }}
                     >
-                      <SelectTrigger id="glass-type" className="w-full">
-                        <SelectValue placeholder="Seleccione un tipo de vidrio" />
+                      <SelectTrigger id="glass-type" className="w-full min-h-[60px] py-2 flex items-start">
+                        <SelectValue placeholder="Seleccione un tipo de vidrio" className="text-left break-words" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[40vh]">
                         {/* Campo de búsqueda */}
@@ -1216,8 +1212,8 @@ ${customerComments.trim()}`
                             {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
                               <SelectItem key={glass.name} value={glass.name} className="py-3">
                                 <div className="flex flex-col w-full">
-                                  <div className="font-medium text-sm leading-tight">{glass.name}</div>
-                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mt-1">
+                                  <div className="font-medium text-sm leading-tight break-words">{glass.name}</div>
+                                  <div className="flex flex-col gap-1 mt-1">
                                     <div className="text-xs text-gray-600">
                                       Precio Viprou: $
                                       {glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
@@ -1241,8 +1237,8 @@ ${customerComments.trim()}`
                             {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
                               <SelectItem key={glass.name} value={glass.name} className="py-3">
                                 <div className="flex flex-col w-full">
-                                  <div className="font-medium text-sm leading-tight">{glass.name}</div>
-                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mt-1">
+                                  <div className="font-medium text-sm leading-tight break-words">{glass.name}</div>
+                                  <div className="flex flex-col gap-1 mt-1">
                                     <div className="text-xs text-gray-600">
                                       Precio Viprou: $
                                       {glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
@@ -1573,7 +1569,7 @@ ${customerComments.trim()}`
                                             </div>
                                             {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
                                               <SelectItem key={glass.name} value={glass.name} className="py-2">
-                                                <div className="text-xs sm:text-sm">{glass.name}</div>
+                                                <div className="text-xs sm:text-sm break-words">{glass.name}</div>
                                               </SelectItem>
                                             ))}
                                           </>
@@ -1587,7 +1583,7 @@ ${customerComments.trim()}`
                                             </div>
                                             {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
                                               <SelectItem key={glass.name} value={glass.name} className="py-2">
-                                                <div className="text-xs sm:text-sm">{glass.name}</div>
+                                                <div className="text-xs sm:text-sm break-words">{glass.name}</div>
                                               </SelectItem>
                                             ))}
                                           </>
