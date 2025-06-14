@@ -18,41 +18,7 @@ import OrderHistory from "./order-history"
 import { saveOrder, type SavedOrder } from "@/lib/order-history"
 import { canSellHalfSheet, calculateOptimizedPrice } from "@/lib/optimizer"
 
-// Función para enviar datos al webhook
-async function sendToWebhook(orderItems: OrderItem[], origen: string) {
-  try {
-    const response = await fetch("https://n8n.viprou.com/webhook/103b1e30-807f-4bba-a65f-9698f0c23d2c", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        orderItems,
-        origen: origen,
-        // Incluir información adicional si está disponible en los items
-        customerInfo:
-          orderItems.length > 0 && orderItems[0].customerName
-            ? {
-                name: orderItems[0].customerName,
-                phone: orderItems[0].customerPhone,
-                comments: orderItems[0].customerComments || "",
-              }
-            : null,
-      }),
-    })
 
-    if (!response.ok) {
-      console.warn(`Webhook response not OK: ${response.statusText}`)
-      return null
-    }
-
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.warn("Webhook error (non-critical):", error)
-    return null // Don't throw, just return null
-  }
-}
 
 export default function GlassOptimizationSystem() {
   const [selectedGlassType, setSelectedGlassType] = useState("")
@@ -94,6 +60,45 @@ export default function GlassOptimizationSystem() {
   const [customerPhone, setCustomerPhone] = useState("")
   const [customerComments, setCustomerComments] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
+
+  // Función para enviar datos al webhook
+async function sendToWebhook(orderItems: OrderItem[], origen: string) {
+  try {
+    const response = await fetch("https://n8n.viprou.com/webhook/103b1e30-807f-4bba-a65f-9698f0c23d2c", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        orderItems,
+        origen: origen,
+        // Incluir información adicional si está disponible en los items
+        customerInfo:
+          orderItems.length > 0 && orderItems[0].customerName
+            ? {
+                name: orderItems[0].customerName,
+                phone: orderItems[0].customerPhone,
+                comments: orderItems[0].customerComments || "",
+              }
+            : null,
+        precio_optimizado: totalPrice,
+        precio_sin_optimizar: nonOptimizedPrice,
+        descuento_aplicado: nonOptimizedPrice-totalPrice
+      }),
+    })
+
+    if (!response.ok) {
+      console.warn(`Webhook response not OK: ${response.statusText}`)
+      return null
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.warn("Webhook error (non-critical):", error)
+    return null // Don't throw, just return null
+  }
+}
 
   // Estados para tracking de abandono
   const [orderProcessedTime, setOrderProcessedTime] = useState<number | null>(null)
@@ -489,6 +494,7 @@ export default function GlassOptimizationSystem() {
 
         // Enviar webhook al mostrar el resumen
         sendToWebhook(orderItems, "Cargar_pagina_resumen")
+
       }, 500)
     } catch (err) {
       console.error("Error al procesar el pedido:", err)
