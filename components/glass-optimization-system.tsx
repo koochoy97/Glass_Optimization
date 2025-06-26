@@ -18,8 +18,6 @@ import OrderHistory from "./order-history"
 import { saveOrder, type SavedOrder } from "@/lib/order-history"
 import { canSellHalfSheet, calculateOptimizedPrice } from "@/lib/optimizer"
 
-
-
 export default function GlassOptimizationSystem() {
   const [selectedGlassType, setSelectedGlassType] = useState("")
   const [width, setWidth] = useState("")
@@ -60,45 +58,49 @@ export default function GlassOptimizationSystem() {
   const [customerPhone, setCustomerPhone] = useState("")
   const [customerComments, setCustomerComments] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
+  const [widthError, setWidthError] = useState("")
+  const [heightError, setHeightError] = useState("")
+  const [widthFocused, setWidthFocused] = useState(false)
+  const [heightFocused, setHeightFocused] = useState(false)
 
   // Función para enviar datos al webhook
-async function sendToWebhook(orderItems: OrderItem[], origen: string) {
-  try {
-    const response = await fetch("https://n8n.viprou.com/webhook/103b1e30-807f-4bba-a65f-9698f0c23d2c", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        orderItems,
-        origen: origen,
-        // Incluir información adicional si está disponible en los items
-        customerInfo:
-          orderItems.length > 0 && orderItems[0].customerName
-            ? {
-                name: orderItems[0].customerName,
-                phone: orderItems[0].customerPhone,
-                comments: orderItems[0].customerComments || "",
-              }
-            : null,
-        precio_optimizado: totalPrice,
-        precio_sin_optimizar: nonOptimizedPrice,
-        descuento_aplicado: nonOptimizedPrice-totalPrice
-      }),
-    })
+  async function sendToWebhook(orderItems: OrderItem[], origen: string) {
+    try {
+      const response = await fetch("https://n8n.viprou.com/webhook/103b1e30-807f-4bba-a65f-9698f0c23d2c", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderItems,
+          origen: origen,
+          // Incluir información adicional si está disponible en los items
+          customerInfo:
+            orderItems.length > 0 && orderItems[0].customerName
+              ? {
+                  name: orderItems[0].customerName,
+                  phone: orderItems[0].customerPhone,
+                  comments: orderItems[0].customerComments || "",
+                }
+              : null,
+          precio_optimizado: totalPrice,
+          precio_sin_optimizar: nonOptimizedPrice,
+          descuento_aplicado: nonOptimizedPrice - totalPrice,
+        }),
+      })
 
-    if (!response.ok) {
-      console.warn(`Webhook response not OK: ${response.statusText}`)
-      return null
+      if (!response.ok) {
+        console.warn(`Webhook response not OK: ${response.statusText}`)
+        return null
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.warn("Webhook error (non-critical):", error)
+      return null // Don't throw, just return null
     }
-
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.warn("Webhook error (non-critical):", error)
-    return null // Don't throw, just return null
   }
-}
 
   // Estados para tracking de abandono
   const [orderProcessedTime, setOrderProcessedTime] = useState<number | null>(null)
@@ -494,7 +496,6 @@ async function sendToWebhook(orderItems: OrderItem[], origen: string) {
 
         // Enviar webhook al mostrar el resumen
         sendToWebhook(orderItems, "Cargar_pagina_resumen")
-
       }, 500)
     } catch (err) {
       console.error("Error al procesar el pedido:", err)
@@ -505,6 +506,30 @@ async function sendToWebhook(orderItems: OrderItem[], origen: string) {
   // Función para validar datos de contacto
   const isContactDataValid = () => {
     return customerName.trim().length > 0 && customerPhone.trim().length > 0
+  }
+
+  // Función para validar campos numéricos
+  const validateNumericField = (value: string, fieldName: string) => {
+    if (!value.trim()) {
+      return "Ingresá un número válido"
+    }
+    const numValue = Number.parseFloat(value)
+    if (isNaN(numValue) || numValue <= 0) {
+      return "Ingresá un número válido"
+    }
+    return ""
+  }
+
+  // Función para obtener clases de estilo según el estado del campo
+  const getFieldClasses = (value: string, error: string, focused: boolean) => {
+    const baseClasses = "w-full transition-colors duration-200"
+    if (error && value.trim()) {
+      return `${baseClasses} border-red-300 focus:border-red-500 focus:ring-red-500`
+    }
+    if (value.trim() && !error) {
+      return `${baseClasses} border-green-300 focus:border-green-500 focus:ring-green-500`
+    }
+    return baseClasses
   }
 
   const handleConfirmOrder = async () => {
@@ -657,19 +682,26 @@ ${customerComments.trim()}`
 
   // Función para agregar un nuevo item al pedido
   const handleAddToOrder = () => {
-    if (!selectedGlassType || !width || !height || !quantity) {
-      setError("Por favor, complete todos los campos")
+    // Validar campos
+    const widthErr = validateNumericField(width, "ancho")
+    const heightErr = validateNumericField(height, "alto")
+
+    setWidthError(widthErr)
+    setHeightError(heightErr)
+
+    if (!selectedGlassType) {
+      setError("Por favor, seleccione un tipo de vidrio")
+      return
+    }
+
+    if (widthErr || heightErr) {
+      setError("Por favor, corrija los errores en los campos de medidas")
       return
     }
 
     const widthValue = Number.parseFloat(width)
     const heightValue = Number.parseFloat(height)
     const quantityValue = Number.parseInt(quantity) || 1
-
-    if (isNaN(widthValue) || isNaN(heightValue)) {
-      setError("Por favor, ingrese valores numéricos válidos para el ancho y el alto")
-      return
-    }
 
     const newItem: OrderItem = {
       id: Math.random().toString(36).substring(7),
@@ -688,6 +720,8 @@ ${customerComments.trim()}`
     setWidth("")
     setHeight("")
     setQuantity("1")
+    setWidthError("")
+    setHeightError("")
   }
 
   // Función para editar un item existente
@@ -821,74 +855,84 @@ ${customerComments.trim()}`
         <CardHeader className="bg-blue-50 border-b border-blue-100">
           <div className="flex items-center">
             <CheckCircle className="h-6 w-6 text-blue-600 mr-2" />
-            <CardTitle>Revisión del Pedido</CardTitle>
+            <CardTitle>🧾 Tu pedido optimizado está listo para enviar</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="space-y-6">
             {/* Sección de ahorro destacada */}
             {nonOptimizedPrice > 0 && totalPrice > 0 && (
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
-                <h3 className="font-medium text-green-800 mb-4 flex items-center">
-                  <TrendingDown className="h-5 w-5 mr-2 text-green-600" />
+              <div className="bg-gradient-to-r from-green-100 to-emerald-100 p-6 rounded-lg border-2 border-green-300 shadow-sm">
+                <h3 className="font-bold text-green-800 mb-4 flex items-center text-lg">
+                  <TrendingDown className="h-6 w-6 mr-3 text-green-600" />
                   Ahorro Viprou con Optimización
                 </h3>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {/* Versión móvil - Apilada verticalmente */}
                   <div className="sm:hidden space-y-3">
-                    <div className="bg-white p-3 rounded-md border border-gray-100 flex justify-between items-center">
-                      <p className="text-sm text-gray-500">Precio sin optimización:</p>
-                      <p className="font-medium line-through text-red-500">
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center">
+                      <p className="text-sm text-gray-600 font-medium">Precio sin optimización:</p>
+                      <p className="font-semibold line-through text-red-600 text-lg">
                         ${nonOptimizedPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </p>
                     </div>
 
-                    <div className="bg-white p-3 rounded-md border border-gray-100 flex justify-between items-center">
-                      <p className="text-sm text-gray-500">Precio Viprou optimizado:</p>
-                      <p className="font-medium text-green-600">
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center">
+                      <p className="text-sm text-gray-600 font-medium">Precio Viprou optimizado:</p>
+                      <p className="font-semibold text-green-700 text-lg">
                         ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </p>
                     </div>
 
-                    <div className="bg-green-100 p-3 rounded-md border border-green-200">
-                      <div className="flex justify-between items-center">
-                        <p className="text-sm text-green-700">Ahorro Viprou total:</p>
-                        <p className="font-bold text-green-700">
+                    <div className="bg-green-200 p-4 rounded-lg border-2 border-green-400 shadow-sm">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-sm text-green-800 font-semibold flex items-center">
+                          💰 Ahorro Viprou total:
+                        </p>
+                        <p className="font-bold text-green-800 text-xl">
                           ${(nonOptimizedPrice - totalPrice).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                         </p>
                       </div>
-                      <div className="text-right text-sm text-green-700 mt-1">
+                      <div className="text-right text-sm text-green-700 font-medium">
                         (
                         {nonOptimizedPrice > 0
                           ? (((nonOptimizedPrice - totalPrice) / nonOptimizedPrice) * 100).toFixed(1)
                           : 0}
                         %)
                       </div>
+                      <div className="mt-3 text-center">
+                        <p className="text-green-800 font-bold text-base">
+                          ¡Te ahorrás más de ${Math.floor((nonOptimizedPrice - totalPrice) / 1000) * 1000}.000 con la
+                          optimización!
+                        </p>
+                      </div>
                     </div>
                   </div>
 
                   {/* Versión desktop - En columnas */}
                   <div className="hidden sm:grid grid-cols-3 gap-4">
-                    <div className="bg-white p-3 rounded-md border border-gray-100">
-                      <p className="text-sm text-gray-500">Precio sin optimización</p>
-                      <p className="font-medium line-through text-red-500">
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                      <p className="text-sm text-gray-600 font-medium mb-2">Precio sin optimización</p>
+                      <p className="font-semibold line-through text-red-600 text-lg">
                         ${nonOptimizedPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </p>
                     </div>
 
-                    <div className="bg-white p-3 rounded-md border border-gray-100">
-                      <p className="text-sm text-gray-500">Precio Viprou optimizado</p>
-                      <p className="font-medium text-green-600">
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                      <p className="text-sm text-gray-600 font-medium mb-2">Precio Viprou optimizado</p>
+                      <p className="font-semibold text-green-700 text-lg">
                         ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </p>
                     </div>
 
-                    <div className="bg-green-100 p-3 rounded-md border border-green-200">
-                      <p className="text-sm text-green-700">Ahorro Viprou total</p>
-                      <p className="font-bold text-green-700">
+                    <div className="bg-green-200 p-4 rounded-lg border-2 border-green-400 shadow-sm">
+                      <p className="text-sm text-green-800 font-semibold mb-2 flex items-center">
+                        💰 Ahorro Viprou total
+                      </p>
+                      <p className="font-bold text-green-800 text-xl mb-2">
                         ${(nonOptimizedPrice - totalPrice).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                        <span className="text-sm font-normal ml-1">
+                        <span className="text-sm font-normal ml-2">
                           (
                           {nonOptimizedPrice > 0
                             ? (((nonOptimizedPrice - totalPrice) / nonOptimizedPrice) * 100).toFixed(1)
@@ -897,6 +941,13 @@ ${customerComments.trim()}`
                         </span>
                       </p>
                     </div>
+                  </div>
+
+                  <div className="text-center mt-4">
+                    <p className="text-green-800 font-bold text-lg bg-white/60 inline-block px-6 py-3 rounded-full border-2 border-green-300">
+                      ¡Te ahorrás más de ${Math.floor((nonOptimizedPrice - totalPrice) / 1000) * 1000}.000 con la
+                      optimización!
+                    </p>
                   </div>
                 </div>
               </div>
@@ -950,31 +1001,41 @@ ${customerComments.trim()}`
               </div>
             </div>
 
-            <div>
-              <h3 className="font-medium mb-3">Comentarios del cliente (opcional)</h3>
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-600 bg-gray-50 inline-block px-4 py-2 rounded-full border border-gray-200">
+                <strong>Total de cortes: {orderItems.reduce((sum, item) => sum + item.quantity, 0)} unidades</strong>
+              </p>
+            </div>
 
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div>
+              <h3 className="font-medium mb-3 flex items-center">📝 Comentarios del cliente (opcional)</h3>
+
+              <div className="bg-gray-50 p-6 rounded-lg border-2 border-gray-200 shadow-sm">
                 <textarea
                   id="customer-comments"
                   value={customerComments}
                   onChange={(e) => setCustomerComments(e.target.value)}
                   placeholder="Escribí aquí cualquier aclaración o detalle especial que debamos saber sobre tu pedido…"
-                  className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="w-full min-h-[120px] p-4 border-2 border-gray-300 rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm shadow-sm"
                   rows={4}
                 />
-                <p className="text-xs text-gray-500 mt-2">
-                  Ejemplos: "Filo matado en los bordes", "Cuidado con el traslado", "Entregar por la mañana", etc.
+                <p className="text-xs text-gray-500 mt-3 bg-blue-50 p-3 rounded-md border border-blue-200">
+                  💡 <strong>Ejemplos:</strong> "Filo matado en los bordes", "Cuidado con el traslado", "Entregar por la
+                  mañana", etc.
                 </p>
               </div>
             </div>
 
             <div>
-              <h3 className="font-medium mb-3">Datos de Contacto</h3>
+              <h3 className="font-medium mb-3 flex items-center">
+                <span className="text-green-600 mr-2">📱</span>
+                Datos de Contacto
+              </h3>
 
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
-                <p className="text-blue-700 text-sm mb-3 flex items-center">
-                  <Info className="h-4 w-4 mr-2" />
-                  Para procesar tu pedido necesitamos tus datos de contacto
+                <p className="text-blue-700 text-sm mb-4 flex items-center bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <span className="text-green-600 mr-2">📱</span>
+                  Solo usaremos tu número para confirmar tu pedido. No enviamos spam.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1064,20 +1125,31 @@ ${customerComments.trim()}`
                 <Button
                   onClick={handleConfirmOrder}
                   disabled={!isContactDataValid()}
-                  className={`h-12 text-base order-1 sm:order-2 ${
+                  className={`h-14 text-lg font-semibold order-1 sm:order-2 ${
                     isContactDataValid()
-                      ? "bg-green-600 hover:bg-green-700"
+                      ? "bg-green-600 hover:bg-green-700 shadow-lg"
                       : "bg-gray-400 cursor-not-allowed hover:bg-gray-400"
                   }`}
                 >
-                  <CheckCircle className="mr-2 h-5 w-5" />
-                  {isContactDataValid() ? "Confirmar pedido" : "Completá tus datos para continuar"}
+                  {isContactDataValid() ? (
+                    <>
+                      <span className="mr-2">📱</span>
+                      Confirmar pedido por WhatsApp ✅
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-5 w-5" />
+                      Completá tus datos para continuar
+                    </>
+                  )}
                 </Button>
               </div>
 
               {/* Texto informativo */}
-              <p className="text-sm text-gray-500 text-center">
-                Te vamos a contactar por WhatsApp para finalizar el pedido.
+              <p className="text-sm text-gray-600 text-center bg-green-50 p-3 rounded-lg border border-green-200">
+                <span className="font-semibold text-green-700">Te vamos a contactar en minutos.</span>
+                <br />
+                Nuestro equipo confirmará todos los detalles por WhatsApp.
               </p>
             </div>
           </div>
@@ -1099,9 +1171,21 @@ ${customerComments.trim()}`
   return (
     <div className="w-full">
       <Card className="shadow-lg mb-6">
-        <CardHeader className="px-4 py-3 sm:px-6 sm:py-4 flex flex-row justify-between items-center bg-gradient-to-r from-blue-50 to-blue-100 border-b">
-          <CardTitle className="text-lg sm:text-xl">Viprou – Cotización rápida de vidrios</CardTitle>
-          <div className="flex gap-2">
+        <CardHeader
+          className="px-4 py-6 sm:px-6 sm:py-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-b relative"
+          style={{ backgroundColor: "#eaf4ff" }}
+        >
+          <div className="text-center">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900 mb-2">
+              Viprou – Cotizá y comprá vidrios a medida 100% online
+            </h1>
+            <p className="text-base sm:text-lg text-gray-700 font-normal">
+              Primer e-commerce de vidrio plano de Argentina 🚀
+            </p>
+          </div>
+
+          {/* Botón de reiniciar posicionado absolutamente en la esquina superior derecha */}
+          <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
             <Button
               variant="outline"
               className="flex items-center gap-2 bg-white hover:bg-red-50 border-red-200 text-red-600"
@@ -1130,14 +1214,37 @@ ${customerComments.trim()}`
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* COLUMNA IZQUIERDA - Formulario de entrada */}
             <div className="space-y-3 sm:space-y-4">
-              <div className="bg-blue-50 p-4 rounded-md mb-4 text-blue-700">
-                <h3 className="text-lg font-medium mb-2 flex items-center">
-                  <Info className="h-5 w-5 mr-2" /> ¿Qué necesitás cortar?
-                </h3>
-                <p className="text-sm">
-                  Elegí el tipo de vidrio, poné las medidas y la cantidad. Podés cargar varios cortes y después procesar
-                  el pedido para optimizar al máximo los materiales.
-                </p>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-6 rounded-lg mb-6 border border-blue-100">
+                {/* Título principal */}
+                <div className="text-center mb-4">
+                  <h2 className="text-xl sm:text-2xl font-bold text-blue-900 mb-2">
+                    🪟 Realizá tu pedido en solo 3 pasos
+                  </h2>
+                  <p className="text-base sm:text-lg text-green-700 font-semibold bg-green-100 inline-block px-4 py-2 rounded-full border border-green-200">
+                    🚚 Envío gratis + 35% de descuento por 3 días
+                  </p>
+                </div>
+
+                {/* Pasos visuales */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
+                  <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
+                    <div className="text-2xl mb-2">🔍</div>
+                    <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 1</h3>
+                    <p className="text-blue-700 text-xs sm:text-sm">Elegí el tipo de vidrio</p>
+                  </div>
+
+                  <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
+                    <div className="text-2xl mb-2">📏</div>
+                    <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 2</h3>
+                    <p className="text-blue-700 text-xs sm:text-sm">Indicá las medidas</p>
+                  </div>
+
+                  <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
+                    <div className="text-2xl mb-2">➕</div>
+                    <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 3</h3>
+                    <p className="text-blue-700 text-xs sm:text-sm">Agregá tu corte</p>
+                  </div>
+                </div>
               </div>
 
               <div className="bg-white p-4 rounded-lg border border-gray-200">
@@ -1145,7 +1252,7 @@ ${customerComments.trim()}`
                   <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
                     1
                   </div>
-                  <h3 className="font-medium">Cargá tus cortes</h3>
+                  <h3 className="font-medium">Completá los datos del corte</h3>
                 </div>
 
                 <div className="space-y-4">
@@ -1212,20 +1319,45 @@ ${customerComments.trim()}`
                         {/* Primera sección: Vidrios incoloros que se pueden vender por media hoja */}
                         {organizedGlassTypes.incoloroHalfSheetProducts.length > 0 && (
                           <>
-                            <div className="px-2 py-2 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200 sticky top-[60px] z-10">
+                            <div className="px-4 py-3 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200">
                               🔷 Vidrios que se pueden vender por media hoja
                             </div>
                             {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
-                              <SelectItem key={glass.name} value={glass.name} className="py-3">
-                                <div className="flex flex-col w-full">
-                                  <div className="font-medium text-sm leading-tight break-words">{glass.name}</div>
-                                  <div className="flex flex-col gap-1 mt-1">
-                                    <div className="text-xs text-gray-600">
-                                      Precio Viprou: $
-                                      {glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
-                                    </div>
-                                    <div className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full w-fit">
-                                      ½ hoja disponible
+                              <SelectItem
+                                key={glass.name}
+                                value={glass.name}
+                                className="px-4 py-3 min-h-[80px] flex items-start"
+                              >
+                                <div className="flex items-start w-full gap-3">
+                                  {/* Ícono decorativo */}
+                                  <div className="text-lg mt-0.5 flex-shrink-0">🪟</div>
+
+                                  {/* Contenido principal */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex flex-col gap-y-1">
+                                      {/* Línea 1: Nombre del vidrio */}
+                                      <div className="font-medium text-sm leading-tight text-gray-900 break-words">
+                                        {glass.name}
+                                      </div>
+
+                                      {/* Línea 2: Precio */}
+                                      <div className="text-xs text-gray-600">
+                                        Precio Viprou:{" "}
+                                        <span className="font-semibold text-gray-800">
+                                          ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
+                                        </span>
+                                      </div>
+
+                                      {/* Línea 3: Etiqueta con tooltip */}
+                                      <div className="flex items-center justify-between mt-1">
+                                        <div
+                                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                                          style={{ backgroundColor: "#e5f3ff", color: "#1e40af" }}
+                                          title="Podés pedir media hoja de este tipo"
+                                        >
+                                          ½ hoja disponible
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -1237,20 +1369,41 @@ ${customerComments.trim()}`
                         {/* Segunda sección: Vidrios que se venden por hoja entera */}
                         {organizedGlassTypes.nonIncoloroProducts.length > 0 && (
                           <>
-                            <div className="px-2 py-2 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 sticky top-[60px] z-10 mt-1">
+                            <div className="px-4 py-3 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 mt-2">
                               🔶 Vidrios que se venden por hoja entera
                             </div>
                             {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
-                              <SelectItem key={glass.name} value={glass.name} className="py-3">
-                                <div className="flex flex-col w-full">
-                                  <div className="font-medium text-sm leading-tight break-words">{glass.name}</div>
-                                  <div className="flex flex-col gap-1 mt-1">
-                                    <div className="text-xs text-gray-600">
-                                      Precio Viprou: $
-                                      {glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
-                                    </div>
-                                    <div className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full w-fit">
-                                      Solo hoja completa
+                              <SelectItem
+                                key={glass.name}
+                                value={glass.name}
+                                className="px-4 py-3 min-h-[80px] flex items-start"
+                              >
+                                <div className="flex items-start w-full gap-3">
+                                  {/* Ícono decorativo */}
+                                  <div className="text-lg mt-0.5 flex-shrink-0">📐</div>
+
+                                  {/* Contenido principal */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex flex-col gap-y-1">
+                                      {/* Línea 1: Nombre del vidrio */}
+                                      <div className="font-medium text-sm leading-tight text-gray-900 break-words">
+                                        {glass.name}
+                                      </div>
+
+                                      {/* Línea 2: Precio */}
+                                      <div className="text-xs text-gray-600">
+                                        Precio Viprou:{" "}
+                                        <span className="font-semibold text-gray-800">
+                                          ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
+                                        </span>
+                                      </div>
+
+                                      {/* Línea 3: Etiqueta (para mantener altura uniforme) */}
+                                      <div className="flex items-center justify-between mt-1">
+                                        <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                          Solo hoja completa
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -1263,33 +1416,98 @@ ${customerComments.trim()}`
                   </div>
 
                   <div>
-                    <Label className="mb-1 block">Medidas (mm)</Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <div className="flex items-center">
-                          <span className="text-xs text-gray-500 mr-2">Ancho</span>
+                    <Label className="mb-3 block font-medium">Medidas del corte</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Campo Ancho */}
+                      <div className="space-y-1">
+                        <div className="relative">
                           <Input
                             id="width"
                             type="number"
                             value={width}
-                            onChange={(e) => setWidth(e.target.value)}
-                            placeholder="Ancho"
-                            className="w-full"
+                            onChange={(e) => {
+                              setWidth(e.target.value)
+                              const error = validateNumericField(e.target.value, "ancho")
+                              setWidthError(error)
+                            }}
+                            onFocus={() => setWidthFocused(true)}
+                            onBlur={() => setWidthFocused(false)}
+                            placeholder=" "
+                            className={`${getFieldClasses(width, widthError, widthFocused)} pt-6 pb-2 peer`}
                           />
+                          <Label
+                            htmlFor="width"
+                            className={`absolute left-3 transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-gray-600 ${
+                              width ? "top-1 text-xs text-gray-600" : "top-3 text-base text-gray-400"
+                            }`}
+                          >
+                            Ancho
+                          </Label>
+                          {!width && !widthFocused && (
+                            <span className="absolute right-3 top-3 text-sm text-gray-400 pointer-events-none">
+                              ej: 500
+                            </span>
+                          )}
                         </div>
+                        <p className="text-xs text-gray-500">En milímetros (mm)</p>
+                        {widthError && width.trim() && (
+                          <p className="text-xs text-red-600 flex items-center">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            {widthError}
+                          </p>
+                        )}
+                        {!widthError && width.trim() && (
+                          <p className="text-xs text-green-600 flex items-center">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Correcto
+                          </p>
+                        )}
                       </div>
-                      <div>
-                        <div className="flex items-center">
-                          <span className="text-xs text-gray-500 mr-2">Alto</span>
+
+                      {/* Campo Alto */}
+                      <div className="space-y-1">
+                        <div className="relative">
                           <Input
                             id="height"
                             type="number"
                             value={height}
-                            onChange={(e) => setHeight(e.target.value)}
-                            placeholder="Alto"
-                            className="w-full"
+                            onChange={(e) => {
+                              setHeight(e.target.value)
+                              const error = validateNumericField(e.target.value, "alto")
+                              setHeightError(error)
+                            }}
+                            onFocus={() => setHeightFocused(true)}
+                            onBlur={() => setHeightFocused(false)}
+                            placeholder=" "
+                            className={`${getFieldClasses(height, heightError, heightFocused)} pt-6 pb-2 peer`}
                           />
+                          <Label
+                            htmlFor="height"
+                            className={`absolute left-3 transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-gray-600 ${
+                              height ? "top-1 text-xs text-gray-600" : "top-3 text-base text-gray-400"
+                            }`}
+                          >
+                            Alto
+                          </Label>
+                          {!height && !heightFocused && (
+                            <span className="absolute right-3 top-3 text-sm text-gray-400 pointer-events-none">
+                              ej: 700
+                            </span>
+                          )}
                         </div>
+                        <p className="text-xs text-gray-500">En milímetros (mm)</p>
+                        {heightError && height.trim() && (
+                          <p className="text-xs text-red-600 flex items-center">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            {heightError}
+                          </p>
+                        )}
+                        {!heightError && height.trim() && (
+                          <p className="text-xs text-green-600 flex items-center">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Correcto
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1304,6 +1522,9 @@ ${customerComments.trim()}`
                           if (selectedGlass) {
                             setWidth(selectedGlass.width.toString())
                             setHeight(selectedGlass.height.toString())
+                            // Limpiar errores al autocompletar
+                            setWidthError("")
+                            setHeightError("")
                           }
                         }}
                         className="text-xs"
@@ -1322,7 +1543,7 @@ ${customerComments.trim()}`
                       type="number"
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
-                      placeholder="Cantidad"
+                      placeholder="Cantidad de cortes"
                       min="1"
                       className="w-full"
                     />
@@ -1339,9 +1560,18 @@ ${customerComments.trim()}`
                     </div>
                   )}
 
-                  <Button onClick={handleAddToOrder} className="w-full bg-green-600 hover:bg-green-700">
-                    <Plus className="mr-2 h-4 w-4" /> Cargar corte
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={handleAddToOrder}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      disabled={!selectedGlassType || widthError || heightError || !width.trim() || !height.trim()}
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Cargar corte
+                    </Button>
+                    <p className="text-xs text-gray-500 text-center italic">
+                      Podés cargar varios cortes antes de finalizar tu pedido.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -1513,120 +1743,33 @@ ${customerComments.trim()}`
                                 } else {
                                   const pricePerM2 = glassType.price
                                   const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
-                                  price = sheetArea * pricePerM2 * item.quantity
                                 }
-                              } else if (glassType) {
-                                const pricePerM2 = glassType.price
-                                const sheetArea = (glassType.width / 1000) * (glassType.height / 1000)
-                                price = sheetArea * pricePerM2 * item.quantity
                               }
-
                               return (
-                                <TableRow key={item.id} className="hover:bg-white/50 transition-colors">
-                                  <TableCell className="py-2 sm:py-3">
-                                    <Select
-                                      value={item.glassType}
-                                      onValueChange={(value) => handleChangeGlassType(item.id, value)}
-                                    >
-                                      <SelectTrigger className="h-8 text-xs sm:text-sm">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent className="max-h-[30vh]">
-                                        {/* Campo de búsqueda */}
-                                        <div className="sticky top-0 z-20 bg-white border-b border-gray-200 p-2">
-                                          <div className="relative">
-                                            <input
-                                              type="text"
-                                              placeholder="Buscar tipo de vidrio…"
-                                              value={searchTerm}
-                                              onChange={(e) => setSearchTerm(e.target.value)}
-                                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-8"
-                                              onClick={(e) => e.stopPropagation()}
-                                              onKeyDown={(e) => e.stopPropagation()}
-                                            />
-                                            <svg
-                                              className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              viewBox="0 0 24 24"
-                                            >
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                              />
-                                            </svg>
-                                          </div>
-                                        </div>
-
-                                        {/* Mostrar mensaje si no hay resultados */}
-                                        {!organizedGlassTypes.hasResults && searchTerm.trim() && (
-                                          <div className="p-4 text-center text-gray-500 text-sm">
-                                            No se encontraron productos que coincidan con "{searchTerm}"
-                                          </div>
-                                        )}
-
-                                        {/* Primera sección: Vidrios incoloros que se pueden vender por media hoja */}
-                                        {organizedGlassTypes.incoloroHalfSheetProducts.length > 0 && (
-                                          <>
-                                            <div className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200 sticky top-[60px] z-10">
-                                              🔷 Media hoja disponible
-                                            </div>
-                                            {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
-                                              <SelectItem key={glass.name} value={glass.name} className="py-2">
-                                                <div className="text-xs sm:text-sm break-words">{glass.name}</div>
-                                              </SelectItem>
-                                            ))}
-                                          </>
-                                        )}
-
-                                        {/* Segunda sección: Vidrios que se venden por hoja entera */}
-                                        {organizedGlassTypes.nonIncoloroProducts.length > 0 && (
-                                          <>
-                                            <div className="px-2 py-1 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 sticky top-[60px] z-10 mt-1">
-                                              🔶 Solo hoja completa
-                                            </div>
-                                            {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
-                                              <SelectItem key={glass.name} value={glass.name} className="py-2">
-                                                <div className="text-xs sm:text-sm break-words">{glass.name}</div>
-                                              </SelectItem>
-                                            ))}
-                                          </>
-                                        )}
-                                      </SelectContent>
-                                    </Select>
+                                <TableRow key={item.id}>
+                                  <TableCell className="whitespace-nowrap text-xs sm:text-sm">
+                                    {item.glassType}
                                   </TableCell>
-                                  <TableCell className="py-2 sm:py-3 text-xs sm:text-sm">
+                                  <TableCell className="whitespace-nowrap text-xs sm:text-sm">
                                     {item.width}mm x {item.height}mm
                                   </TableCell>
-                                  <TableCell className="py-2 sm:py-3 text-xs sm:text-sm text-center">
+                                  <TableCell className="whitespace-nowrap text-xs sm:text-sm">
                                     {item.quantity}
                                   </TableCell>
-                                  <TableCell className="py-2 sm:py-3 text-xs sm:text-sm">
-                                    $
-                                    {price.toLocaleString("es-AR", {
-                                      minimumFractionDigits: 2,
-                                      maximumFractionDigits: 2,
-                                    })}
+                                  <TableCell className="whitespace-nowrap text-xs sm:text-sm">
+                                    ${price.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                                   </TableCell>
-                                  <TableCell className="py-2 sm:py-3">
-                                    <div className="flex gap-1">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleEditItem(item.id)}
-                                        className="h-7 w-7 p-0"
-                                      >
-                                        <Edit className="h-3 w-3" />
+                                  <TableCell className="whitespace-nowrap text-xs sm:text-sm">
+                                    <div className="flex gap-2">
+                                      <Button variant="outline" size="icon" onClick={() => handleEditItem(item.id)}>
+                                        <Edit className="h-4 w-4" />
                                       </Button>
                                       <Button
-                                        variant="outline"
-                                        size="sm"
+                                        variant="destructive"
+                                        size="icon"
                                         onClick={() => handleRemoveItem(item.id)}
-                                        className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
                                       >
-                                        <Trash2 className="h-3 w-3" />
+                                        <Trash2 className="h-4 w-4" />
                                       </Button>
                                     </div>
                                   </TableCell>
@@ -1638,35 +1781,35 @@ ${customerComments.trim()}`
                       </div>
                     </div>
                   </div>
-
-                  <div className="mt-4 space-y-3">
-                    <div className="bg-green-50 p-3 rounded-md border border-green-200">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-green-800">Total Viprou optimizado:</span>
-                        <span className="text-xl font-bold text-green-700">
-                          ${totalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={handleProcessOrder}
-                      className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-base"
-                    >
-                      <CheckCircle className="mr-2 h-5 w-5" />
-                      Procesar Pedido
-                    </Button>
-                  </div>
                 </div>
               )}
 
-              {orderItems.length === 0 && (
-                <div className="bg-gray-50 p-8 rounded-lg border border-gray-200 text-center">
-                  <div className="text-gray-500 mb-2">
-                    <Info className="h-8 w-8 mx-auto mb-2" />
+              {orderItems.length > 0 && (
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-3">
+                    <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
+                      3
+                    </div>
+                    <h3 className="font-medium">¡Listo para optimizar!</h3>
                   </div>
-                  <h3 className="font-medium text-gray-700 mb-1">No hay cortes cargados</h3>
-                  <p className="text-sm text-gray-500">Agregá cortes usando el formulario para comenzar tu pedido.</p>
+
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-700">
+                      Viprou va a distribuir tus cortes en las hojas de vidrio disponibles para minimizar el desperdicio
+                      y ahorrarte plata.
+                    </p>
+
+                    <Button onClick={handleProcessOrder} className="w-full bg-blue-600 hover:bg-blue-700">
+                      Optimizar mi pedido
+                    </Button>
+
+                    <div className="text-center text-xs text-gray-500">
+                      ¿Querés ver cómo funciona la optimización?{" "}
+                      <Button variant="link" size="sm" onClick={() => setShowSystemInfo(true)} className="underline">
+                        Ver información del sistema
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
