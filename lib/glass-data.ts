@@ -11,15 +11,17 @@ export interface GlassType {
   description?: string
 }
 
-// Función para calcular el precio ajustado según la fórmula:
-// Restar 3.5%, luego aumentar 10.5%, y finalmente aumentar 30%
-function adjustPrice(originalPrice: number): number {
-  // Los precios ya vienen ajustados, devolver directamente
-  return Math.round(originalPrice * 100) / 100
-}
-
-// Lista de tipos de vidrio disponibles con sus dimensiones y precios actualizados
+// Lista de tipos de vidrio disponibles con precios actualizados del CSV
 export const glassTypes: GlassType[] = [
+  {
+    name: "Float Incoloro 2mm",
+    code: "FLI02MM",
+    width: 3600,
+    height: 2250,
+    price: 8000.0,
+    thickness: 2,
+    description: "Vidrio float transparente de 2mm de espesor",
+  },
   {
     name: "Float Incoloro 2.2mm",
     code: "FLI02",
@@ -214,7 +216,7 @@ export const glassTypes: GlassType[] = [
     code: "PACI04",
     width: 1600,
     height: 2500,
-    price: 15327.77,
+    price: 12110.13,
     thickness: 4,
     description: "Vidrio fantasía Pacifico de 4mm",
   },
@@ -223,7 +225,7 @@ export const glassTypes: GlassType[] = [
     code: "STII04",
     width: 1600,
     height: 2500,
-    price: 14251.11,
+    price: 11263.88,
     thickness: 4,
     description: "Vidrio fantasía Stipolite de 4mm",
   },
@@ -232,7 +234,7 @@ export const glassTypes: GlassType[] = [
     code: "ACAI04",
     width: 1600,
     height: 2500,
-    price: 15315.47,
+    price: 12100.32,
     thickness: 4,
     description: "Vidrio fantasía Acanalado de 4mm",
   },
@@ -241,7 +243,7 @@ export const glassTypes: GlassType[] = [
     code: "AUSI04",
     width: 1600,
     height: 2500,
-    price: 15315.47,
+    price: 12100.32,
     thickness: 4,
     description: "Vidrio fantasía Austral de 4mm",
   },
@@ -250,7 +252,7 @@ export const glassTypes: GlassType[] = [
     code: "MARAM04",
     width: 1600,
     height: 2500,
-    price: 26195.36,
+    price: 20704.23,
     thickness: 4,
     description: "Vidrio fantasía Martele color ámbar de 4mm",
   },
@@ -259,7 +261,7 @@ export const glassTypes: GlassType[] = [
     code: "MARAZ04",
     width: 1600,
     height: 2500,
-    price: 26195.36,
+    price: 20704.23,
     thickness: 4,
     description: "Vidrio fantasía Martele color azul de 4mm",
   },
@@ -268,7 +270,7 @@ export const glassTypes: GlassType[] = [
     code: "MARVE04",
     width: 1600,
     height: 2500,
-    price: 26195.36,
+    price: 20704.23,
     thickness: 4,
     description: "Vidrio fantasía Martele color verde de 4mm",
   },
@@ -322,7 +324,7 @@ export const glassTypes: GlassType[] = [
     code: "ARM061625",
     width: 1600,
     height: 2500,
-    price: 33012.89,
+    price: 26080.28,
     thickness: 6,
     description: "Vidrio armado incoloro de 6mm",
   },
@@ -403,7 +405,7 @@ export const glassTypes: GlassType[] = [
     code: "MARI04160250",
     width: 1600,
     height: 2500,
-    price: 15327.77,
+    price: 12110.13,
     thickness: 4,
     description: "Vidrio fantasía Martele incoloro de 4mm",
   },
@@ -412,7 +414,7 @@ export const glassTypes: GlassType[] = [
     code: "SYCI04",
     width: 1600,
     height: 2500,
-    price: 15315.47,
+    price: 12110.13,
     thickness: 4,
     description: "Vidrio fantasía Sycamore de 4mm",
   },
