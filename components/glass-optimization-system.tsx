@@ -135,9 +135,20 @@ export default function GlassOptimizationSystem() {
     // Organizar productos incoloros por categorías (solo los que se pueden vender por media hoja)
     const incoloroHalfSheetProducts = incoloroProducts.filter((glass) => canSellHalfSheet(glass.name))
 
+    // Cambiar esta línea:
+    // const floatIncoloroProducts = incoloroHalfSheetProducts
+    //   .filter((glass) => glass.name.toLowerCase().includes("float"))
+    //   .sort((a, b) => a.name.localeCompare(b.name))
+
+    // Por esta nueva lógica:
     const floatIncoloroProducts = incoloroHalfSheetProducts
       .filter((glass) => glass.name.toLowerCase().includes("float"))
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => {
+        // Ordenar por espesor (thickness) en lugar de alfabéticamente
+        const thicknessA = a.thickness || 0
+        const thicknessB = b.thickness || 0
+        return thicknessA - thicknessB
+      })
 
     const laminadoIncoloroProducts = incoloroHalfSheetProducts
       .filter((glass) => glass.name.toLowerCase().includes("laminado"))
@@ -1232,9 +1243,6 @@ ${customerComments.trim()}`
                   <h2 className="text-xl sm:text-2xl font-bold text-blue-900 mb-2">
                     🪟 Realizá tu pedido en solo 3 pasos
                   </h2>
-                  <p className="text-base sm:text-lg text-green-700 font-semibold bg-green-100 inline-block px-4 py-2 rounded-full border border-green-200">
-                    🚚 Envío gratis + 35% de descuento por 3 días
-                  </p>
                 </div>
 
                 {/* Pasos visuales */}
@@ -1293,16 +1301,16 @@ ${customerComments.trim()}`
                         <SelectValue placeholder="Seleccione un tipo de vidrio" className="text-left break-words" />
                       </SelectTrigger>
 
-                      <SelectContent className="max-h-[40vh]">
-                        {/* Campo de búsqueda simplificado */}
-                        <div className="sticky top-0 z-20 bg-white border-b border-gray-200 p-2">
+                      <SelectContent className="max-h-[50vh] p-0">
+                        {/* Campo de búsqueda en contenedor separado */}
+                        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-3 shadow-sm">
                           <div className="relative">
                             <input
                               type="text"
                               placeholder="Buscar tipo de vidrio…"
                               value={searchTerm}
                               onChange={(e) => setSearchTerm(e.target.value)}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-8"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-8 bg-white"
                               onClick={(e) => e.stopPropagation()}
                               onKeyDown={(e) => e.stopPropagation()}
                             />
@@ -1322,8 +1330,8 @@ ${customerComments.trim()}`
                           </div>
                         </div>
 
-                        {/* Contenedor con scroll para las opciones */}
-                        <div className="max-h-80 overflow-y-auto">
+                        {/* Contenedor de resultados con scroll independiente */}
+                        <div className="max-h-80 overflow-y-auto pt-2">
                           {/* Mostrar mensaje si no hay resultados */}
                           {!organizedGlassTypes.hasResults && searchTerm.trim() && (
                             <div className="p-4 text-center text-gray-500 text-sm">
@@ -1334,79 +1342,83 @@ ${customerComments.trim()}`
                           {/* Primera sección: Vidrios incoloros que se pueden vender por media hoja */}
                           {organizedGlassTypes.incoloroHalfSheetProducts.length > 0 && (
                             <>
-                              <div className="px-4 py-3 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200 sticky top-0 z-10">
+                              <div className="px-4 py-3 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200 sticky top-0 z-5">
                                 🔷 Vidrios que se pueden vender por media hoja
                               </div>
-                              {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
-                                <SelectItem
-                                  key={glass.name}
-                                  value={glass.name}
-                                  className="px-4 py-3 min-h-[80px] flex items-start cursor-pointer hover:bg-gray-50"
-                                >
-                                  <div className="flex items-start w-full gap-3">
-                                    <div className="text-lg mt-0.5 flex-shrink-0">🪟</div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex flex-col gap-y-1">
-                                        <div className="font-medium text-sm leading-tight text-gray-900 break-words">
-                                          {glass.name}
-                                        </div>
-                                        <div className="text-xs text-gray-600">
-                                          Precio Viprou:{" "}
-                                          <span className="font-semibold text-gray-800">
-                                            ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center justify-between mt-1">
-                                          <div
-                                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                                            style={{ backgroundColor: "#e5f3ff", color: "#1e40af" }}
-                                          >
-                                            ½ hoja disponible
+                              <div className="pb-2">
+                                {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
+                                  <SelectItem
+                                    key={glass.name}
+                                    value={glass.name}
+                                    className="px-4 py-3 min-h-[80px] flex items-start cursor-pointer hover:bg-gray-50 mx-2 my-1 rounded-md"
+                                  >
+                                    <div className="flex items-start w-full gap-3">
+                                      <div className="text-lg mt-0.5 flex-shrink-0">🪟</div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex flex-col gap-y-1">
+                                          <div className="font-medium text-sm leading-tight text-gray-900 break-words">
+                                            {glass.name}
+                                          </div>
+                                          <div className="text-xs text-gray-600">
+                                            Precio Viprou:{" "}
+                                            <span className="font-semibold text-gray-800">
+                                              ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center justify-between mt-1">
+                                            <div
+                                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                                              style={{ backgroundColor: "#e5f3ff", color: "#1e40af" }}
+                                            >
+                                              ½ hoja disponible
+                                            </div>
                                           </div>
                                         </div>
                                       </div>
                                     </div>
-                                  </div>
-                                </SelectItem>
-                              ))}
+                                  </SelectItem>
+                                ))}
+                              </div>
                             </>
                           )}
 
                           {/* Segunda sección: Vidrios que se venden por hoja entera */}
                           {organizedGlassTypes.nonIncoloroProducts.length > 0 && (
                             <>
-                              <div className="px-4 py-3 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 sticky top-0 z-10 mt-2">
+                              <div className="px-4 py-3 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 sticky top-0 z-5 mt-2">
                                 🔶 Vidrios que se venden por hoja entera
                               </div>
-                              {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
-                                <SelectItem
-                                  key={glass.name}
-                                  value={glass.name}
-                                  className="px-4 py-3 min-h-[80px] flex items-start cursor-pointer hover:bg-gray-50"
-                                >
-                                  <div className="flex items-start w-full gap-3">
-                                    <div className="text-lg mt-0.5 flex-shrink-0">📐</div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex flex-col gap-y-1">
-                                        <div className="font-medium text-sm leading-tight text-gray-900 break-words">
-                                          {glass.name}
-                                        </div>
-                                        <div className="text-xs text-gray-600">
-                                          Precio Viprou:{" "}
-                                          <span className="font-semibold text-gray-800">
-                                            ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center justify-between mt-1">
-                                          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                            Solo hoja completa
+                              <div className="pb-2">
+                                {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
+                                  <SelectItem
+                                    key={glass.name}
+                                    value={glass.name}
+                                    className="px-4 py-3 min-h-[80px] flex items-start cursor-pointer hover:bg-gray-50 mx-2 my-1 rounded-md"
+                                  >
+                                    <div className="flex items-start w-full gap-3">
+                                      <div className="text-lg mt-0.5 flex-shrink-0">📐</div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex flex-col gap-y-1">
+                                          <div className="font-medium text-sm leading-tight text-gray-900 break-words">
+                                            {glass.name}
+                                          </div>
+                                          <div className="text-xs text-gray-600">
+                                            Precio Viprou:{" "}
+                                            <span className="font-semibold text-gray-800">
+                                              ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center justify-between mt-1">
+                                            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                              Solo hoja completa
+                                            </div>
                                           </div>
                                         </div>
                                       </div>
                                     </div>
-                                  </div>
-                                </SelectItem>
-                              ))}
+                                  </SelectItem>
+                                ))}
+                              </div>
                             </>
                           )}
                         </div>

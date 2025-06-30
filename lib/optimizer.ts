@@ -5,6 +5,7 @@ import type { OrderItem } from "./calculator"
 
 // Tipos de vidrio que se pueden vender por media hoja
 export const HALF_SHEET_GLASS_TYPES = [
+  "Float Incoloro 2mm",
   "Float Incoloro 3mm", // F3
   "Float Incoloro 4mm", // F4
   "Laminado 3+3 Incoloro", // Laminado 3+3
@@ -39,7 +40,8 @@ export function canSellHalfSheet(glassTypeName: string): boolean {
       normalizedName.includes("f3") ||
       normalizedName.includes("f4") ||
       normalizedName.includes("f5") ||
-      normalizedName.includes("f6"))
+      normalizedName.includes("f6") ||
+      normalizedName.includes("2mm"))
   ) {
     return true
   }
