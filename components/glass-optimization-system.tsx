@@ -63,6 +63,19 @@ export default function GlassOptimizationSystem() {
   const [widthFocused, setWidthFocused] = useState(false)
   const [heightFocused, setHeightFocused] = useState(false)
 
+  // Función para verificar si un vidrio es Float Incoloro 2.2mm
+  const isFloat22mm = (glassTypeName: string): boolean => {
+    return glassTypeName === "Float Incoloro 2.2mm"
+  }
+
+  // Función para verificar si las dimensiones corresponden a hoja completa
+  const isFullSheetDimensions = (width: number, height: number, glassType: string): boolean => {
+    const glass = glassTypes.find((g) => g.name === glassType)
+    if (!glass) return false
+
+    return (width === glass.width && height === glass.height) || (width === glass.height && height === glass.width) // También considerar rotación
+  }
+
   // Función para enviar datos al webhook
   async function sendToWebhook(orderItems: OrderItem[], origen: string) {
     try {
@@ -132,19 +145,19 @@ export default function GlassOptimizationSystem() {
     const incoloroProducts = glassTypes.filter((glass) => isIncoloro(glass.name) && matchesSearch(glass.name))
     const nonIncoloroProducts = glassTypes.filter((glass) => !isIncoloro(glass.name) && matchesSearch(glass.name))
 
-    // Organizar productos incoloros por categorías (solo los que se pueden vender por media hoja)
-    const incoloroHalfSheetProducts = incoloroProducts.filter((glass) => canSellHalfSheet(glass.name))
+    // Separar productos incoloros entre los que se pueden vender por media hoja y los que no
+    // IMPORTANTE: Float 2.2mm debe ir a fullSheetOnly aunque técnicamente podría venderse por media hoja
+    const incoloroHalfSheetProducts = incoloroProducts.filter(
+      (glass) => canSellHalfSheet(glass.name) && !isFloat22mm(glass.name),
+    )
+    const incoloroFullSheetOnlyProducts = incoloroProducts.filter(
+      (glass) => !canSellHalfSheet(glass.name) || isFloat22mm(glass.name),
+    )
 
-    // Cambiar esta línea:
-    // const floatIncoloroProducts = incoloroHalfSheetProducts
-    //   .filter((glass) => glass.name.toLowerCase().includes("float"))
-    //   .sort((a, b) => a.name.localeCompare(b.name))
-
-    // Por esta nueva lógica:
+    // Ordenar Float incoloros por espesor
     const floatIncoloroProducts = incoloroHalfSheetProducts
       .filter((glass) => glass.name.toLowerCase().includes("float"))
       .sort((a, b) => {
-        // Ordenar por espesor (thickness) en lugar de alfabéticamente
         const thicknessA = a.thickness || 0
         const thicknessB = b.thickness || 0
         return thicknessA - thicknessB
@@ -168,8 +181,10 @@ export default function GlassOptimizationSystem() {
       )
       .sort((a, b) => a.name.localeCompare(b.name))
 
-    // Todos los productos no incoloros (ordenados alfabéticamente)
-    const sortedNonIncoloroProducts = nonIncoloroProducts.sort((a, b) => a.name.localeCompare(b.name))
+    // Combinar todos los productos no incoloros con los incoloros que solo se venden por hoja entera
+    const allFullSheetOnlyProducts = [...nonIncoloroProducts, ...incoloroFullSheetOnlyProducts].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    )
 
     return {
       incoloroHalfSheetProducts: [
@@ -178,8 +193,8 @@ export default function GlassOptimizationSystem() {
         ...espejoIncoloroProducts,
         ...otherIncoloroHalfSheetProducts,
       ],
-      nonIncoloroProducts: sortedNonIncoloroProducts,
-      hasResults: incoloroHalfSheetProducts.length > 0 || sortedNonIncoloroProducts.length > 0,
+      nonIncoloroProducts: allFullSheetOnlyProducts,
+      hasResults: incoloroHalfSheetProducts.length > 0 || allFullSheetOnlyProducts.length > 0,
     }
   }, [searchTerm])
 
@@ -722,6 +737,16 @@ ${customerComments.trim()}`
     const widthValue = Number.parseFloat(width)
     const heightValue = Number.parseFloat(height)
     const quantityValue = Number.parseInt(quantity) || 1
+
+    // VALIDACIÓN ESPECÍFICA PARA FLOAT 2.2MM
+    if (isFloat22mm(selectedGlassType)) {
+      if (!isFullSheetDimensions(widthValue, heightValue, selectedGlassType)) {
+        setError(
+          "⚠️ Este tipo de vidrio solo se vende por hoja completa. Use las dimensiones completas de la hoja (3600mm x 2250mm).",
+        )
+        return
+      }
+    }
 
     const newItem: OrderItem = {
       id: Math.random().toString(36).substring(7),

@@ -31,6 +31,11 @@ export function canSellHalfSheet(glassTypeName: string): boolean {
   // Verificar coincidencia parcial para tipos como "Float 3mm" o "F3"
   const normalizedName = glassTypeName.toLowerCase()
 
+  // EXCLUIR específicamente el 2.2mm que se vende por hoja entera
+  if (normalizedName.includes("2.2mm") || normalizedName.includes("2,2mm")) {
+    return false
+  }
+
   if (
     normalizedName.includes("float") &&
     (normalizedName.includes("3mm") ||
