@@ -581,6 +581,33 @@ export default function GlassOptimizationSystem() {
     // Limpiar cualquier error previo
     setError("")
 
+    // Generar el texto para WhatsApp ANTES de cualquier operación asíncrona
+    const whatsappText = encodeURIComponent(
+      `Hola, soy ${customerName.trim()} y quiero confirmar mi pedido de vidrios:
+
+📱 Mi teléfono: ${customerPhone.trim()}
+
+📋 Detalle del pedido:
+${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}mm x ${item.height}mm)`).join("\n")}
+
+💰 Precio Viprou optimizado: $${totalPrice.toLocaleString("es-AR", {
+        minimumFractionDigits: 2,
+      })}${
+        customerComments.trim()
+          ? `
+
+📝 Comentarios adicionales:
+${customerComments.trim()}`
+          : ""
+      }
+
+¡Gracias!`,
+    )
+
+    // ABRIR WHATSAPP INMEDIATAMENTE (antes de operaciones asíncronas)
+    window.open(`https://wa.me/5491141422955?text=${whatsappText}`, "_blank")
+
+    // Ahora hacer el tracking y webhook (después de abrir WhatsApp)
     if (window.gtag) {
       const timeSpent = orderProcessedTime ? Date.now() - orderProcessedTime : 0
       const savings = Math.max(0, nonOptimizedPrice - totalPrice)
@@ -628,32 +655,6 @@ export default function GlassOptimizationSystem() {
       })),
       "Orden_confirmada",
     )
-
-    // Generar el texto para WhatsApp con los detalles del pedido y datos del cliente
-    const whatsappText = encodeURIComponent(
-      `Hola, soy ${customerName.trim()} y quiero confirmar mi pedido de vidrios:
-
-📱 Mi teléfono: ${customerPhone.trim()}
-
-📋 Detalle del pedido:
-${orderItems.map((item) => `- ${item.quantity}x ${item.glassType} (${item.width}mm x ${item.height}mm)`).join("\n")}
-
-💰 Precio Viprou optimizado: $${totalPrice.toLocaleString("es-AR", {
-        minimumFractionDigits: 2,
-      })}${
-        customerComments.trim()
-          ? `
-
-📝 Comentarios adicionales:
-${customerComments.trim()}`
-          : ""
-      }
-
-¡Gracias!`,
-    )
-
-    // Abrir WhatsApp con el mensaje predefinido - número actualizado
-    window.open(`https://wa.me/5491141422955?text=${whatsappText}`, "_blank")
 
     // Mostrar mensaje de éxito
     setShowSuccessMessage(true)
