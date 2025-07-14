@@ -8,11 +8,12 @@ export const HALF_SHEET_GLASS_TYPES = [
   "Float Incoloro 2mm",
   "Float Incoloro 3mm", // F3
   "Float Incoloro 4mm", // F4
+  "Float Incoloro 5mm", // F5
+  "Float Incoloro 6mm", // F6 - ESTE SÍ se vende por media hoja
   "Laminado 3+3 Incoloro", // Laminado 3+3
+  "Espejo Incoloro 2mm", // Espejo 2mm - AGREGADO
   "Espejo Incoloro 3mm", // Espejo 3mm
   "Espejo Incoloro 4mm", // Espejo 4mm
-  "Float Incoloro 5mm", // F5
-  "Float Incoloro 6mm", // F6
   "Espejo Incoloro 5mm", // Espejo 5mm
   "Espejo Incoloro 6mm", // Espejo 6mm
   "Laminado 4+4 Incoloro", // 4+4
@@ -36,6 +37,16 @@ export function canSellHalfSheet(glassTypeName: string): boolean {
     return false
   }
 
+  // EXCLUIR específicamente el Float 12mm que NO se vende por media hoja
+  if (normalizedName.includes("12mm") && normalizedName.includes("float")) {
+    return false
+  }
+
+  // EXCLUIR específicamente el Float 8mm y 10mm que NO se venden por media hoja
+  if (normalizedName.includes("float") && (normalizedName.includes("8mm") || normalizedName.includes("10mm"))) {
+    return false
+  }
+
   if (
     normalizedName.includes("float") &&
     (normalizedName.includes("3mm") ||
@@ -53,7 +64,8 @@ export function canSellHalfSheet(glassTypeName: string): boolean {
 
   if (
     normalizedName.includes("espejo") &&
-    (normalizedName.includes("3mm") ||
+    (normalizedName.includes("2mm") ||
+      normalizedName.includes("3mm") ||
       normalizedName.includes("4mm") ||
       normalizedName.includes("5mm") ||
       normalizedName.includes("6mm"))
@@ -71,7 +83,65 @@ export function canSellHalfSheet(glassTypeName: string): boolean {
   return false
 }
 
-// Modificar la función calculateOptimalSheets para manejar el caso cuando items es undefined
+// NUEVA FUNCIÓN: Calcular hojas necesarias basado en la nueva lógica de cobro
+export function calculateSheetsNeeded(
+  totalCutArea: number,
+  glassType: GlassType,
+  allowHalfSheet = true,
+): {
+  fullSheets: number
+  halfSheets: number
+  totalArea: number
+} {
+  const fullSheetArea = (glassType.width / 1000) * (glassType.height / 1000)
+  const halfSheetArea = fullSheetArea / 2
+  const canUseHalfSheet = allowHalfSheet && canSellHalfSheet(glassType.name)
+
+  if (!canUseHalfSheet) {
+    // Si no se puede vender por media hoja, siempre cobrar hojas completas
+    const fullSheetsNeeded = Math.ceil(totalCutArea / fullSheetArea)
+    return {
+      fullSheets: fullSheetsNeeded,
+      halfSheets: 0,
+      totalArea: fullSheetsNeeded * fullSheetArea,
+    }
+  }
+
+  // NUEVA LÓGICA: Para productos que permiten media hoja
+  // Si el área solicitada es <= 50% de la hoja, cobrar media hoja
+  // Si el área solicitada es > 50% de la hoja, cobrar hoja completa
+
+  let fullSheets = 0
+  let halfSheets = 0
+  let remainingArea = totalCutArea
+
+  // Procesar de a hojas completas primero
+  while (remainingArea > fullSheetArea) {
+    fullSheets++
+    remainingArea -= fullSheetArea
+  }
+
+  // Para el área restante, aplicar la nueva lógica
+  if (remainingArea > 0) {
+    if (remainingArea <= halfSheetArea) {
+      // Si es <= 50% de la hoja, cobrar media hoja
+      halfSheets = 1
+    } else {
+      // Si es > 50% de la hoja, cobrar hoja completa
+      fullSheets++
+    }
+  }
+
+  const totalArea = fullSheets * fullSheetArea + halfSheets * halfSheetArea
+
+  return {
+    fullSheets,
+    halfSheets,
+    totalArea,
+  }
+}
+
+// Función actualizada para calcular hojas óptimas
 export function calculateOptimalSheets(
   items: OrderItem[] | undefined,
   glassType: GlassType | undefined,
@@ -117,78 +187,23 @@ export function calculateOptimalSheets(
     totalCutArea += cutArea * item.quantity
   })
 
-  // Área de una hoja completa en m²
-  const fullSheetArea = (glassType.width / 1000) * (glassType.height / 1000)
+  // Usar la nueva función de cálculo
+  const { fullSheets, halfSheets, totalArea } = calculateSheetsNeeded(totalCutArea, glassType, allowHalfSheet)
 
-  // Área de media hoja en m²
-  const halfSheetArea = fullSheetArea / 2
+  // Calcular el desperdicio
+  const usedArea = totalCutArea
+  const wastePercentage = totalArea > 0 ? ((totalArea - usedArea) / totalArea) * 100 : 0
 
-  // Verificar si este tipo de vidrio se puede vender por media hoja
-  const canUseHalfSheet = allowHalfSheet && canSellHalfSheet(glassType.name)
-
-  // Calcular el número óptimo de hojas
-  if (canUseHalfSheet) {
-    // Si se puede vender por media hoja, calcular la combinación óptima
-    const fullSheetsNeeded = Math.floor(totalCutArea / fullSheetArea)
-    const remainingArea = totalCutArea - fullSheetsNeeded * fullSheetArea
-
-    // Determinar si necesitamos media hoja adicional
-    let halfSheetsNeeded = 0
-    if (remainingArea > 0) {
-      if (remainingArea <= halfSheetArea) {
-        halfSheetsNeeded = 1
-      } else {
-        // Si el área restante es mayor que media hoja, necesitamos una hoja completa
-        halfSheetsNeeded = 0
-        const fullSheetsTotal = fullSheetsNeeded + 1
-
-        // Calcular el área total y el desperdicio
-        const totalArea = fullSheetsTotal * fullSheetArea
-        const usedArea = totalCutArea
-        const wastePercentage = ((totalArea - usedArea) / totalArea) * 100
-
-        return {
-          fullSheets: fullSheetsTotal,
-          halfSheets: 0,
-          totalArea,
-          usedArea,
-          wastePercentage,
-        }
-      }
-    }
-
-    // Calcular el área total y el desperdicio
-    const totalArea = fullSheetsNeeded * fullSheetArea + halfSheetsNeeded * halfSheetArea
-    const usedArea = totalCutArea
-    const wastePercentage = ((totalArea - usedArea) / totalArea) * 100
-
-    return {
-      fullSheets: fullSheetsNeeded,
-      halfSheets: halfSheetsNeeded,
-      totalArea,
-      usedArea,
-      wastePercentage,
-    }
-  } else {
-    // Si no se puede vender por media hoja, calcular hojas completas
-    const fullSheetsNeeded = Math.ceil(totalCutArea / fullSheetArea)
-
-    // Calcular el área total y el desperdicio
-    const totalArea = fullSheetsNeeded * fullSheetArea
-    const usedArea = totalCutArea
-    const wastePercentage = ((totalArea - usedArea) / totalArea) * 100
-
-    return {
-      fullSheets: fullSheetsNeeded,
-      halfSheets: 0,
-      totalArea,
-      usedArea,
-      wastePercentage,
-    }
+  return {
+    fullSheets,
+    halfSheets,
+    totalArea,
+    usedArea,
+    wastePercentage,
   }
 }
 
-// También actualizar la firma de la función calculateOptimizedPrice
+// Función actualizada para calcular precio optimizado
 export function calculateOptimizedPrice(
   items: OrderItem[] | undefined,
   glassType: GlassType | undefined,
@@ -232,5 +247,40 @@ export function calculateOptimizedPrice(
     totalArea,
     usedArea,
     wastePercentage,
+  }
+}
+
+// NUEVA FUNCIÓN: Calcular precio para un pedido individual (útil para mostrar precios por item)
+export function calculateItemOptimizedPrice(
+  item: OrderItem,
+  glassType: GlassType,
+): {
+  price: number
+  fullSheets: number
+  halfSheets: number
+  description: string
+} {
+  const itemArea = (item.width / 1000) * (item.height / 1000) * item.quantity
+  const { fullSheets, halfSheets, totalArea } = calculateSheetsNeeded(itemArea, glassType)
+
+  const fullSheetPrice = glassType.price * ((glassType.width / 1000) * (glassType.height / 1000))
+  const halfSheetPrice = fullSheetPrice / 2
+  const totalPrice = fullSheets * fullSheetPrice + halfSheets * halfSheetPrice
+
+  // Generar descripción del cobro
+  let description = ""
+  if (fullSheets > 0 && halfSheets > 0) {
+    description = `${fullSheets} hoja${fullSheets > 1 ? "s" : ""} completa${fullSheets > 1 ? "s" : ""} + ${halfSheets} media hoja`
+  } else if (fullSheets > 0) {
+    description = `${fullSheets} hoja${fullSheets > 1 ? "s" : ""} completa${fullSheets > 1 ? "s" : ""}`
+  } else if (halfSheets > 0) {
+    description = `${halfSheets} media hoja`
+  }
+
+  return {
+    price: totalPrice,
+    fullSheets,
+    halfSheets,
+    description,
   }
 }
