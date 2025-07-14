@@ -1224,14 +1224,6 @@ ${customerComments.trim()}`
   // Actualizar el componente principal para mejor responsividad
   return (
     <div className="w-full">
-      {/* Banner promocional */}
-      <div className="bg-gradient-to-r from-green-100 to-blue-100 border border-green-200 rounded-lg mb-4 py-3 px-4 sm:py-4 sm:px-6">
-        <div className="text-center">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-1">🎉 30% OFF + Envío Gratis</h2>
-          <p className="text-sm sm:text-base text-gray-700">Promoción válida con un mínimo de $250.000</p>
-        </div>
-      </div>
-
       <Card className="shadow-lg mb-6">
         <CardHeader
           className="px-4 py-6 sm:px-6 sm:py-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-b relative"
@@ -1407,11 +1399,7 @@ ${customerComments.trim()}`
                                               ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
                                             </span>
                                           </div>
-                                          <div className="mt-1">
-                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                              🏷️ Precio con 30% OFF aplicado
-                                            </span>
-                                          </div>
+                                          <div className="mt-1"></div>
                                           <div className="flex items-center justify-between mt-1">
                                             <div
                                               className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
@@ -1455,11 +1443,7 @@ ${customerComments.trim()}`
                                               ${glass.price.toLocaleString("es-AR", { maximumFractionDigits: 0 })}/m²
                                             </span>
                                           </div>
-                                          <div className="mt-1">
-                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                              🏷️ Precio con 30% OFF aplicado
-                                            </span>
-                                          </div>
+                                          <div className="mt-1"></div>
                                           <div className="flex items-center justify-between mt-1">
                                             <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                                               Solo hoja completa
