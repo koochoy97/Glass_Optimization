@@ -11,7 +11,6 @@ export const HALF_SHEET_GLASS_TYPES = [
   "Float Incoloro 5mm", // F5
   "Float Incoloro 6mm", // F6 - ESTE SÍ se vende por media hoja
   "Laminado 3+3 Incoloro", // Laminado 3+3
-  "Espejo Incoloro 2mm", // Espejo 2mm - AGREGADO
   "Espejo Incoloro 3mm", // Espejo 3mm
   "Espejo Incoloro 4mm", // Espejo 4mm
   "Espejo Incoloro 5mm", // Espejo 5mm
@@ -34,6 +33,11 @@ export function canSellHalfSheet(glassTypeName: string): boolean {
 
   // EXCLUIR específicamente el 2.2mm que se vende por hoja entera
   if (normalizedName.includes("2.2mm") || normalizedName.includes("2,2mm")) {
+    return false
+  }
+
+  // EXCLUIR específicamente el Espejo 2mm que NO se vende por media hoja
+  if (normalizedName.includes("espejo") && normalizedName.includes("2mm")) {
     return false
   }
 
@@ -62,10 +66,10 @@ export function canSellHalfSheet(glassTypeName: string): boolean {
     return true
   }
 
+  // Para espejos, EXCLUIR el 2mm y permitir solo 3mm, 4mm, 5mm, 6mm
   if (
     normalizedName.includes("espejo") &&
-    (normalizedName.includes("2mm") ||
-      normalizedName.includes("3mm") ||
+    (normalizedName.includes("3mm") ||
       normalizedName.includes("4mm") ||
       normalizedName.includes("5mm") ||
       normalizedName.includes("6mm"))
