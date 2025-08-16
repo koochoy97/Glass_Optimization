@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Viprou - Cotización rápida de vidrios",
   description: "Sistema de optimización y cotización de vidrios con inteligencia artificial",
-    generator: 'v0.dev'
+    generator: 'v0.app'
 }
 
 export default function RootLayout({
