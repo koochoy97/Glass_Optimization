@@ -878,8 +878,7 @@ ${customerComments.trim()}`
   // Vista principal
   return (
     <>
-      {/* Full-width header */}
-      <header className="w-full flex items-center justify-between bg-white px-6 py-3 border-b border-gray-200 font-sans">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full flex items-center justify-between bg-white px-6 py-3 border-b border-gray-200 font-sans shadow-sm">
         {/* Logo */}
         <a href="https://viprou.com" className="font-bold text-xl text-black no-underline">
           Viprou
@@ -945,8 +944,7 @@ ${customerComments.trim()}`
         </a>
       </header>
 
-      {/* Boxed content container */}
-      <div className="mx-auto max-w-6xl px-4 py-6">
+      <div className="pt-20 mx-auto max-w-6xl px-4 py-6">
         <Card className="shadow-lg mb-6">
           <CardHeader className="px-4 py-6 sm:px-6 sm:py-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
