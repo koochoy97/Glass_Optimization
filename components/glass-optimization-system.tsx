@@ -877,8 +877,9 @@ ${customerComments.trim()}`
 
   // Vista principal
   return (
-    <div className="w-full">
-      <header className="flex items-center justify-between bg-white px-6 py-3 border-b border-gray-200 font-sans mb-6">
+    <>
+      {/* Full-width header */}
+      <header className="w-full flex items-center justify-between bg-white px-6 py-3 border-b border-gray-200 font-sans">
         {/* Logo */}
         <a href="https://viprou.com" className="font-bold text-xl text-black no-underline">
           Viprou
@@ -944,116 +945,422 @@ ${customerComments.trim()}`
         </a>
       </header>
 
-      <Card className="shadow-lg mb-6">
-        <CardHeader className="px-4 py-6 sm:px-6 sm:py-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="text-center sm:text-left flex-1">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900 mb-2">
-                Viprou – Cotizá y comprá vidrios a medida 100% online
-              </h1>
-              <p className="text-base sm:text-lg text-gray-700 font-normal">
-                Primer e-commerce de vidrio plano de Argentina 🚀
-              </p>
-            </div>
-
-            <div className="flex justify-center sm:justify-end flex-shrink-0">
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 bg-white hover:bg-red-50 border-red-200 text-red-600"
-                onClick={handleResetSystem}
-              >
-                <RefreshCw className="h-5 w-5" />
-                <span className="hidden sm:inline">Reiniciar</span>
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pt-6">
-          {error && (
-            <Alert
-              variant={error.includes("modificación") || error.includes("Editando") ? "default" : "destructive"}
-              className={
-                error.includes("modificación") || error.includes("Editando")
-                  ? "bg-blue-50 border-blue-200 text-blue-800"
-                  : ""
-              }
-            >
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            {/* COLUMNA IZQUIERDA */}
-            <div className="space-y-3 sm:space-y-4">
-              {/* Pasos */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-6 rounded-lg mb-6 border border-blue-100">
-                <div className="text-center mb-4">
-                  <h2 className="text-xl sm:text-2xl font-bold text-blue-900 mb-2">
-                    🪟 Realizá tu pedido en solo 3 pasos
-                  </h2>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
-                  <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
-                    <div className="text-2xl mb-2">🔍</div>
-                    <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 1</h3>
-                    <p className="text-blue-700 text-xs sm:text-sm">Elegí el tipo de vidrio</p>
-                  </div>
-
-                  <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
-                    <div className="text-2xl mb-2">📏</div>
-                    <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 2</h3>
-                    <p className="text-blue-700 text-xs sm:text-sm">Indicá las medidas</p>
-                  </div>
-
-                  <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
-                    <div className="text-2xl mb-2">➕</div>
-                    <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 3</h3>
-                    <p className="text-blue-700 text-xs sm:text-sm">Agregá tu corte</p>
-                  </div>
-                </div>
+      {/* Boxed content container */}
+      <div className="mx-auto max-w-6xl px-4 py-6">
+        <Card className="shadow-lg mb-6">
+          <CardHeader className="px-4 py-6 sm:px-6 sm:py-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="text-center sm:text-left flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900 mb-2">
+                  Viprou – Cotizá y comprá vidrios a medida 100% online
+                </h1>
+                <p className="text-base sm:text-lg text-gray-700 font-normal">
+                  Primer e-commerce de vidrio plano de Argentina 🚀
+                </p>
               </div>
 
-              {/* Formulario */}
-              <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <div className="flex items-center mb-3">
-                  <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
-                    1
+              <div className="flex justify-center sm:justify-end flex-shrink-0">
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2 bg-white hover:bg-red-50 border-red-200 text-red-600"
+                  onClick={handleResetSystem}
+                >
+                  <RefreshCw className="h-5 w-5" />
+                  <span className="hidden sm:inline">Reiniciar</span>
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pt-6">
+            {error && (
+              <Alert
+                variant={error.includes("modificación") || error.includes("Editando") ? "default" : "destructive"}
+                className={
+                  error.includes("modificación") || error.includes("Editando")
+                    ? "bg-blue-50 border-blue-200 text-blue-800"
+                    : ""
+                }
+              >
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              {/* COLUMNA IZQUIERDA */}
+              <div className="space-y-3 sm:space-y-4">
+                {/* Pasos */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-6 rounded-lg mb-6 border border-blue-100">
+                  <div className="text-center mb-4">
+                    <h2 className="text-xl sm:text-2xl font-bold text-blue-900 mb-2">
+                      🪟 Realizá tu pedido en solo 3 pasos
+                    </h2>
                   </div>
-                  <h3 className="font-medium">Completá los datos del corte</h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
+                    <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
+                      <div className="text-2xl mb-2">🔍</div>
+                      <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 1</h3>
+                      <p className="text-blue-700 text-xs sm:text-sm">Elegí el tipo de vidrio</p>
+                    </div>
+
+                    <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
+                      <div className="text-2xl mb-2">📏</div>
+                      <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 2</h3>
+                      <p className="text-blue-700 text-xs sm:text-sm">Indicá las medidas</p>
+                    </div>
+
+                    <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
+                      <div className="text-2xl mb-2">➕</div>
+                      <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 3</h3>
+                      <p className="text-blue-700 text-xs sm:text-sm">Agregá tu corte</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="glass-type" className="mb-1 block">
-                      Tipo de Vidrio
-                    </Label>
+                {/* Formulario */}
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center mb-3">
+                    <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
+                      1
+                    </div>
+                    <h3 className="font-medium">Completá los datos del corte</h3>
+                  </div>
 
-                    {isLoadingGlassTypes ? (
-                      <div className="w-full min-h-[60px] py-2 px-3 border border-gray-300 rounded-md flex items-center justify-center bg-gray-50">
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        <span className="text-sm text-gray-600">Cargando tipos de vidrio...</span>
-                      </div>
-                    ) : glassTypesError ? (
-                      <div className="space-y-2">
-                        <div className="w-full min-h-[60px] py-2 px-3 border border-red-300 rounded-md flex items-center justify-center bg-red-50">
-                          <AlertCircle className="h-4 w-4 text-red-500 mr-2" />
-                          <span className="text-sm text-red-600">Error al cargar tipos de vidrio</span>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="glass-type" className="mb-1 block">
+                        Tipo de Vidrio
+                      </Label>
+
+                      {isLoadingGlassTypes ? (
+                        <div className="w-full min-h-[60px] py-2 px-3 border border-gray-300 rounded-md flex items-center justify-center bg-gray-50">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span className="text-sm text-gray-600">Cargando tipos de vidrio...</span>
                         </div>
-                        <Button onClick={loadGlassTypes} variant="outline" size="sm" className="w-full bg-transparent">
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Reintentar
-                        </Button>
+                      ) : glassTypesError ? (
+                        <div className="space-y-2">
+                          <div className="w-full min-h-[60px] py-2 px-3 border border-red-300 rounded-md flex items-center justify-center bg-red-50">
+                            <AlertCircle className="h-4 w-4 text-red-500 mr-2" />
+                            <span className="text-sm text-red-600">Error al cargar tipos de vidrio</span>
+                          </div>
+                          <Button
+                            onClick={loadGlassTypes}
+                            variant="outline"
+                            size="sm"
+                            className="w-full bg-transparent"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Reintentar
+                          </Button>
+                        </div>
+                      ) : (
+                        <Select
+                          value={selectedGlassType}
+                          onValueChange={(value) => {
+                            setSelectedGlassType(value)
+                            if (!width && !height) {
+                              const selectedGlass = glassTypes.find((glass) => glass.name === value)
+                              if (selectedGlass) {
+                                if (measurementUnit === "mm") {
+                                  setWidth(selectedGlass.maxWidth.toString())
+                                  setHeight(selectedGlass.maxHeight.toString())
+                                } else {
+                                  setWidth((selectedGlass.maxWidth / 10).toString())
+                                  setHeight((selectedGlass.maxHeight / 10).toString())
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          <SelectTrigger id="glass-type" className="w-full min-h-[60px] py-2 flex items-start">
+                            <SelectValue placeholder="Seleccione un tipo de vidrio">
+                              {selectedGlassType && (
+                                <div className="flex flex-col items-start">
+                                  <span className="font-medium text-sm sm:text-base">{selectedGlassType}</span>
+                                  {(() => {
+                                    const selectedGlass = glassTypes.find((glass) => glass.name === selectedGlassType)
+                                    return selectedGlass ? (
+                                      <span className="text-xs text-gray-500">
+                                        {selectedGlass.thickness}mm - $
+                                        {(selectedGlass.pricePerM2 || 0).toLocaleString()}
+                                        /m²
+                                      </span>
+                                    ) : null
+                                  })()}
+                                </div>
+                              )}
+                            </SelectValue>
+                          </SelectTrigger>
+
+                          <SelectContent className="max-h-[50vh] p-0">
+                            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-3 shadow-sm">
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  placeholder="Buscar tipo de vidrio…"
+                                  value={searchTerm}
+                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-8 bg-white"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                />
+                                <svg
+                                  className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                  />
+                                </svg>
+                              </div>
+                            </div>
+
+                            <div className="max-h-80 overflow-y-auto pt-2">
+                              {!organizedGlassTypes.hasResults && searchTerm.trim() && (
+                                <div className="p-4 text-center text-gray-500 text-sm">
+                                  No se encontraron productos que coincidan con "{searchTerm}"
+                                </div>
+                              )}
+
+                              {organizedGlassTypes.incoloroHalfSheetProducts.length > 0 && (
+                                <>
+                                  <div className="px-4 py-3 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200">
+                                    🔷 Vidrios que se pueden vender por media hoja
+                                  </div>
+                                  <div className="pb-2">
+                                    {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
+                                      <SelectItem
+                                        key={glass.name}
+                                        value={glass.name}
+                                        className="px-4 py-3 min-h-[80px] flex items-start cursor-pointer hover:bg-gray-50 mx-2 my-1 rounded-md"
+                                      >
+                                        <div className="flex items-start w-full gap-3">
+                                          <div className="text-lg mt-0.5 flex-shrink-0">🪟</div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex flex-col gap-y-1">
+                                              <div className="font-medium text-sm leading-tight text-gray-900 break-words">
+                                                {glass.name}
+                                              </div>
+                                              <div className="text-xs text-gray-600">
+                                                Precio Viprou:{" "}
+                                                <span className="font-semibold text-gray-800">
+                                                  $
+                                                  {(glass.pricePerM2 || 0).toLocaleString("es-AR", {
+                                                    maximumFractionDigits: 0,
+                                                  })}
+                                                  /m²
+                                                </span>
+                                              </div>
+                                              <div className="flex items-center justify-between mt-1">
+                                                <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                                                  ½ hoja disponible
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+
+                              {organizedGlassTypes.nonIncoloroProducts.length > 0 && (
+                                <>
+                                  <div className="px-4 py-3 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 mt-2">
+                                    🔶 Vidrios que se venden por hoja entera
+                                  </div>
+                                  <div className="pb-2">
+                                    {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
+                                      <SelectItem
+                                        key={glass.name}
+                                        value={glass.name}
+                                        className="px-4 py-3 min-h-[80px] flex items-start cursor-pointer hover:bg-gray-50 mx-2 my-1 rounded-md"
+                                      >
+                                        <div className="flex items-start w-full gap-3">
+                                          <div className="text-lg mt-0.5 flex-shrink-0">📐</div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex flex-col gap-y-1">
+                                              <div className="font-medium text-sm leading-tight text-gray-900 break-words">
+                                                {glass.name}
+                                              </div>
+                                              <div className="text-xs text-gray-600">
+                                                Precio Viprou:{" "}
+                                                <span className="font-semibold text-gray-800">
+                                                  $
+                                                  {(glass.pricePerM2 || 0).toLocaleString("es-AR", {
+                                                    maximumFractionDigits: 0,
+                                                  })}
+                                                  /m²
+                                                </span>
+                                              </div>
+                                              <div className="flex items-center justify-between mt-1">
+                                                <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                                  Solo hoja completa
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+
+                    {/* Medidas */}
+                    <div>
+                      <Label className="mb-3 block font-medium">Medidas del corte</Label>
+
+                      <div className="mb-4">
+                        <Label className="mb-2 block text-sm">Unidad de medida</Label>
+                        <Select
+                          value={measurementUnit}
+                          onValueChange={(value: "mm" | "cm") => {
+                            const oldUnit = measurementUnit
+                            setMeasurementUnit(value)
+
+                            if (width && height) {
+                              if (oldUnit === "mm" && value === "cm") {
+                                setWidth((Number(width) / 10).toString())
+                                setHeight((Number(height) / 10).toString())
+                              } else if (oldUnit === "cm" && value === "mm") {
+                                setWidth((Number(width) * 10).toString())
+                                setHeight((Number(height) * 10).toString())
+                              }
+                            }
+
+                            setWidthError("")
+                            setHeightError("")
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mm">Milímetros (mm)</SelectItem>
+                            <SelectItem value="cm">Centímetros (cm)</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                    ) : (
-                      <Select
-                        value={selectedGlassType}
-                        onValueChange={(value) => {
-                          setSelectedGlassType(value)
-                          if (!width && !height) {
-                            const selectedGlass = glassTypes.find((glass) => glass.name === value)
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div className="space-y-1 sm:space-y-2">
+                          <Label htmlFor="width" className="block text-sm font-medium">
+                            Ancho ({measurementUnit})
+                          </Label>
+                          <Select
+                            value={width}
+                            onValueChange={(value) => {
+                              setWidth(value)
+                              const error = validateNumericField(value, "ancho")
+                              setWidthError(error)
+                            }}
+                          >
+                            <SelectTrigger
+                              id="width"
+                              className={`${getFieldClasses(width, widthError, widthFocused)} min-h-[44px] sm:min-h-[40px]`}
+                            >
+                              <SelectValue placeholder={`Ancho en ${measurementUnit}`} />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[40vh] sm:max-h-60 w-full">
+                              {generateMeasurementOptions("width", measurementUnit).map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}
+                                  className="min-h-[44px] sm:min-h-[36px] text-base sm:text-sm"
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs sm:text-xs text-gray-500">
+                            Máximo: {measurementUnit === "mm" ? "3600mm" : "360cm"}
+                          </p>
+                          {widthError && width.trim() && (
+                            <p className="text-xs text-red-600 flex items-center">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              {widthError}
+                            </p>
+                          )}
+                          {!widthError && width.trim() && (
+                            <p className="text-xs text-green-600 flex items-center">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Correcto
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-1 sm:space-y-2">
+                          <Label htmlFor="height" className="block text-sm font-medium">
+                            Alto ({measurementUnit})
+                          </Label>
+                          <Select
+                            value={height}
+                            onValueChange={(value) => {
+                              setHeight(value)
+                              const error = validateNumericField(value, "alto")
+                              setHeightError(error)
+                            }}
+                          >
+                            <SelectTrigger
+                              id="height"
+                              className={`${getFieldClasses(height, heightError, heightFocused)} min-h-[44px] sm:min-h-[40px]`}
+                            >
+                              <SelectValue placeholder={`Alto en ${measurementUnit}`} />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[40vh] sm:max-h-60 w-full">
+                              {generateMeasurementOptions("height", measurementUnit).map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}
+                                  className="min-h-[44px] sm:min-h-[36px] text-base sm:text-sm"
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs sm:text-xs text-gray-500">
+                            Máximo: {measurementUnit === "mm" ? "2500mm" : "250cm"}
+                          </p>
+                          {heightError && height.trim() && (
+                            <p className="text-xs text-red-600 flex items-center">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              {heightError}
+                            </p>
+                          )}
+                          {!heightError && height.trim() && (
+                            <p className="text-xs text-green-600 flex items-center">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Correcto
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Botón autocompletar */}
+                    {selectedGlassType && (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const selectedGlass = glassTypes.find((glass) => glass.name === selectedGlassType)
                             if (selectedGlass) {
                               if (measurementUnit === "mm") {
                                 setWidth(selectedGlass.maxWidth.toString())
@@ -1062,524 +1369,227 @@ ${customerComments.trim()}`
                                 setWidth((selectedGlass.maxWidth / 10).toString())
                                 setHeight((selectedGlass.maxHeight / 10).toString())
                               }
+                              setWidthError("")
+                              setHeightError("")
                             }
-                          }
-                        }}
-                      >
-                        <SelectTrigger id="glass-type" className="w-full min-h-[60px] py-2 flex items-start">
-                          <SelectValue placeholder="Seleccione un tipo de vidrio">
-                            {selectedGlassType && (
-                              <div className="flex flex-col items-start">
-                                <span className="font-medium text-sm sm:text-base">{selectedGlassType}</span>
-                                {(() => {
-                                  const selectedGlass = glassTypes.find((glass) => glass.name === selectedGlassType)
-                                  return selectedGlass ? (
-                                    <span className="text-xs text-gray-500">
-                                      {selectedGlass.thickness}mm - ${(selectedGlass.pricePerM2 || 0).toLocaleString()}
-                                      /m²
-                                    </span>
-                                  ) : null
-                                })()}
-                              </div>
-                            )}
-                          </SelectValue>
-                        </SelectTrigger>
-
-                        <SelectContent className="max-h-[50vh] p-0">
-                          <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-3 shadow-sm">
-                            <div className="relative">
-                              <input
-                                type="text"
-                                placeholder="Buscar tipo de vidrio…"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-8 bg-white"
-                                onClick={(e) => e.stopPropagation()}
-                                onKeyDown={(e) => e.stopPropagation()}
-                              />
-                              <svg
-                                className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-
-                          <div className="max-h-80 overflow-y-auto pt-2">
-                            {!organizedGlassTypes.hasResults && searchTerm.trim() && (
-                              <div className="p-4 text-center text-gray-500 text-sm">
-                                No se encontraron productos que coincidan con "{searchTerm}"
-                              </div>
-                            )}
-
-                            {organizedGlassTypes.incoloroHalfSheetProducts.length > 0 && (
-                              <>
-                                <div className="px-4 py-3 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200">
-                                  🔷 Vidrios que se pueden vender por media hoja
-                                </div>
-                                <div className="pb-2">
-                                  {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
-                                    <SelectItem
-                                      key={glass.name}
-                                      value={glass.name}
-                                      className="px-4 py-3 min-h-[80px] flex items-start cursor-pointer hover:bg-gray-50 mx-2 my-1 rounded-md"
-                                    >
-                                      <div className="flex items-start w-full gap-3">
-                                        <div className="text-lg mt-0.5 flex-shrink-0">🪟</div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex flex-col gap-y-1">
-                                            <div className="font-medium text-sm leading-tight text-gray-900 break-words">
-                                              {glass.name}
-                                            </div>
-                                            <div className="text-xs text-gray-600">
-                                              Precio Viprou:{" "}
-                                              <span className="font-semibold text-gray-800">
-                                                $
-                                                {(glass.pricePerM2 || 0).toLocaleString("es-AR", {
-                                                  maximumFractionDigits: 0,
-                                                })}
-                                                /m²
-                                              </span>
-                                            </div>
-                                            <div className="flex items-center justify-between mt-1">
-                                              <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                                                ½ hoja disponible
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </div>
-                              </>
-                            )}
-
-                            {organizedGlassTypes.nonIncoloroProducts.length > 0 && (
-                              <>
-                                <div className="px-4 py-3 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 mt-2">
-                                  🔶 Vidrios que se venden por hoja entera
-                                </div>
-                                <div className="pb-2">
-                                  {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
-                                    <SelectItem
-                                      key={glass.name}
-                                      value={glass.name}
-                                      className="px-4 py-3 min-h-[80px] flex items-start cursor-pointer hover:bg-gray-50 mx-2 my-1 rounded-md"
-                                    >
-                                      <div className="flex items-start w-full gap-3">
-                                        <div className="text-lg mt-0.5 flex-shrink-0">📐</div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex flex-col gap-y-1">
-                                            <div className="font-medium text-sm leading-tight text-gray-900 break-words">
-                                              {glass.name}
-                                            </div>
-                                            <div className="text-xs text-gray-600">
-                                              Precio Viprou:{" "}
-                                              <span className="font-semibold text-gray-800">
-                                                $
-                                                {(glass.pricePerM2 || 0).toLocaleString("es-AR", {
-                                                  maximumFractionDigits: 0,
-                                                })}
-                                                /m²
-                                              </span>
-                                            </div>
-                                            <div className="flex items-center justify-between mt-1">
-                                              <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                                Solo hoja completa
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </SelectContent>
-                      </Select>
+                          }}
+                          className="text-xs"
+                        >
+                          Usar dimensiones de hoja completa
+                        </Button>
+                      </div>
                     )}
-                  </div>
 
-                  {/* Medidas */}
-                  <div>
-                    <Label className="mb-3 block font-medium">Medidas del corte</Label>
-
-                    <div className="mb-4">
-                      <Label className="mb-2 block text-sm">Unidad de medida</Label>
-                      <Select
-                        value={measurementUnit}
-                        onValueChange={(value: "mm" | "cm") => {
-                          const oldUnit = measurementUnit
-                          setMeasurementUnit(value)
-
-                          if (width && height) {
-                            if (oldUnit === "mm" && value === "cm") {
-                              setWidth((Number(width) / 10).toString())
-                              setHeight((Number(height) / 10).toString())
-                            } else if (oldUnit === "cm" && value === "mm") {
-                              setWidth((Number(width) * 10).toString())
-                              setHeight((Number(height) * 10).toString())
-                            }
-                          }
-
-                          setWidthError("")
-                          setHeightError("")
-                        }}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="mm">Milímetros (mm)</SelectItem>
-                          <SelectItem value="cm">Centímetros (cm)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    {/* Cantidad */}
+                    <div>
+                      <Label htmlFor="quantity" className="mb-1 block">
+                        Cantidad
+                      </Label>
+                      <Input
+                        id="quantity"
+                        type="number"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        placeholder="Cantidad de cortes"
+                        min="1"
+                        className="w-full"
+                      />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                      <div className="space-y-1 sm:space-y-2">
-                        <Label htmlFor="width" className="block text-sm font-medium">
-                          Ancho ({measurementUnit})
-                        </Label>
-                        <Select
-                          value={width}
-                          onValueChange={(value) => {
-                            setWidth(value)
-                            const error = validateNumericField(value, "ancho")
-                            setWidthError(error)
-                          }}
-                        >
-                          <SelectTrigger
-                            id="width"
-                            className={`${getFieldClasses(width, widthError, widthFocused)} min-h-[44px] sm:min-h-[40px]`}
-                          >
-                            <SelectValue placeholder={`Ancho en ${measurementUnit}`} />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[40vh] sm:max-h-60 w-full">
-                            {generateMeasurementOptions("width", measurementUnit).map((option) => (
-                              <SelectItem
-                                key={option.value}
-                                value={option.value}
-                                className="min-h-[44px] sm:min-h-[36px] text-base sm:text-sm"
-                              >
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs sm:text-xs text-gray-500">
-                          Máximo: {measurementUnit === "mm" ? "3600mm" : "360cm"}
-                        </p>
-                        {widthError && width.trim() && (
-                          <p className="text-xs text-red-600 flex items-center">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            {widthError}
-                          </p>
-                        )}
-                        {!widthError && width.trim() && (
-                          <p className="text-xs text-green-600 flex items-center">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Correcto
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-1 sm:space-y-2">
-                        <Label htmlFor="height" className="block text-sm font-medium">
-                          Alto ({measurementUnit})
-                        </Label>
-                        <Select
-                          value={height}
-                          onValueChange={(value) => {
-                            setHeight(value)
-                            const error = validateNumericField(value, "alto")
-                            setHeightError(error)
-                          }}
-                        >
-                          <SelectTrigger
-                            id="height"
-                            className={`${getFieldClasses(height, heightError, heightFocused)} min-h-[44px] sm:min-h-[40px]`}
-                          >
-                            <SelectValue placeholder={`Alto en ${measurementUnit}`} />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[40vh] sm:max-h-60 w-full">
-                            {generateMeasurementOptions("height", measurementUnit).map((option) => (
-                              <SelectItem
-                                key={option.value}
-                                value={option.value}
-                                className="min-h-[44px] sm:min-h-[36px] text-base sm:text-sm"
-                              >
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs sm:text-xs text-gray-500">
-                          Máximo: {measurementUnit === "mm" ? "2500mm" : "250cm"}
-                        </p>
-                        {heightError && height.trim() && (
-                          <p className="text-xs text-red-600 flex items-center">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            {heightError}
-                          </p>
-                        )}
-                        {!heightError && height.trim() && (
-                          <p className="text-xs text-green-600 flex items-center">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Correcto
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Botón autocompletar */}
-                  {selectedGlassType && (
-                    <div className="flex justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const selectedGlass = glassTypes.find((glass) => glass.name === selectedGlassType)
-                          if (selectedGlass) {
-                            if (measurementUnit === "mm") {
-                              setWidth(selectedGlass.maxWidth.toString())
-                              setHeight(selectedGlass.maxHeight.toString())
-                            } else {
-                              setWidth((selectedGlass.maxWidth / 10).toString())
-                              setHeight((selectedGlass.maxHeight / 10).toString())
-                            }
-                            setWidthError("")
-                            setHeightError("")
-                          }
-                        }}
-                        className="text-xs"
-                      >
-                        Usar dimensiones de hoja completa
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Cantidad */}
-                  <div>
-                    <Label htmlFor="quantity" className="mb-1 block">
-                      Cantidad
-                    </Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      value={quantity}
-                      onChange={(e) => setQuantity(e.target.value)}
-                      placeholder="Cantidad de cortes"
-                      min="1"
-                      className="w-full"
-                    />
-                  </div>
-
-                  {/* Info */}
-                  {selectedGlassTypeInfo && width && height && (
-                    <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
-                      <div className="flex items-center">
-                        <Info className="h-5 w-5 mr-2 text-blue-600 flex-shrink-0" />
-                        <p className="text-sm text-blue-700">
-                          Viprou optimizará mejor tu pedido si agregas más cortes al mismo tipo de vidrio.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Botón agregar */}
-                  <div className="space-y-2">
-                    <Button
-                      onClick={handleAddToOrder}
-                      className="w-full bg-green-600 hover:bg-green-700"
-                      disabled={!selectedGlassType || widthError || heightError || !width.trim() || !height.trim()}
-                    >
-                      <Plus className="mr-2 h-4 w-4" /> Cargar corte
-                    </Button>
-                    <p className="text-xs text-gray-500 text-center italic">
-                      Podés cargar varios cortes antes de finalizar tu pedido.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Visualización */}
-              {selectedGlassType && (
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <h3 className="text-lg font-medium mb-2 flex items-center justify-between">
-                    <span>Visualización de Corte</span>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Vista previa</span>
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Viprou utilizará esta información para calcular la distribución óptima de tus cortes.
-                  </p>
-                  <GlassCutVisualization
-                    width={measurementUnit === "mm" ? Number(width) || 0 : (Number(width) || 0) * 10}
-                    height={measurementUnit === "mm" ? Number(height) || 0 : (Number(height) || 0) * 10}
-                    glassType={selectedGlassType || "Laminado 3+3 Incoloro"}
-                    glassWidth={glassWidth || 3600}
-                    glassHeight={glassHeight || 2500}
-                    quantity={Number(quantity) || 1}
-                  />
-                </div>
-              )}
-
-              {/* Calculadora de ahorro */}
-              {showSavingsCalculator && (
-                <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
-                  <h3 className="font-semibold text-green-800 mb-3 flex items-center">
-                    <span className="text-lg mr-2">💸</span>
-                    Calculadora de Ahorro Viprou
-                  </h3>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-700">Precio estándar sin optimización:</span>
-                      <span className="line-through text-red-500">
-                        ${(nonOptimizedPrice || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between font-bold">
-                      <span className="text-gray-800">Lo que pagás usando la IA de Viprou:</span>
-                      <span className="text-green-600">
-                        ${(totalPrice || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-
-                    {(nonOptimizedPrice || 0) - (totalPrice || 0) > 0 ? (
-                      <div className="bg-white p-3 rounded-md">
-                        <div className="flex items-center mb-2">
-                          <span className="text-lg mr-2">🟢</span>
-                          <p className="font-medium text-green-800">
-                            ¡Ahorro Viprou: $ $
-                            {((nonOptimizedPrice || 0) - (totalPrice || 0)).toLocaleString("es-AR", {
-                              minimumFractionDigits: 2,
-                            })}
-                            !
+                    {/* Info */}
+                    {selectedGlassTypeInfo && width && height && (
+                      <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                        <div className="flex items-center">
+                          <Info className="h-5 w-5 mr-2 text-blue-600 flex-shrink-0" />
+                          <p className="text-sm text-blue-700">
+                            Viprou optimizará mejor tu pedido si agregas más cortes al mismo tipo de vidrio.
                           </p>
                         </div>
-                        <p className="text-sm text-gray-700 mb-2">
-                          🟢 Nuestra inteligencia artificial analiza tus cortes y encuentra la forma más eficiente de
-                          usar el vidrio para que gastes menos.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="bg-white p-3 rounded-md">
-                        <p className="text-sm text-gray-700 mb-2">
-                          🟢 Nuestra inteligencia artificial analiza tus cortes y encuentra la forma más eficiente de
-                          usar el vidrio para que gastes menos.
-                        </p>
-                        <p className="text-sm text-blue-700 mb-2">
-                          💡 Agregá más cortes y dejá que la IA trabaje por vos: cuanto más completo sea tu pedido, más
-                          plata podés ahorrar.
-                        </p>
                       </div>
                     )}
 
-                    <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
-                      <p className="text-sm text-blue-800">
-                        🧠 La IA de Viprou está diseñada para que vos no pagues de más.
+                    {/* Botón agregar */}
+                    <div className="space-y-2">
+                      <Button
+                        onClick={handleAddToOrder}
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        disabled={!selectedGlassType || widthError || heightError || !width.trim() || !height.trim()}
+                      >
+                        <Plus className="mr-2 h-4 w-4" /> Cargar corte
+                      </Button>
+                      <p className="text-xs text-gray-500 text-center italic">
+                        Podés cargar varios cortes antes de finalizar tu pedido.
                       </p>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* COLUMNA DERECHA */}
-            <div className="space-y-4">
-              {orderItems.length > 0 && (
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-center mb-3">
-                    <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
-                      2
-                    </div>
-                    <h3 className="font-medium">Revisá tus cortes</h3>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-md p-3">
-                    <div className="overflow-x-auto">
-                      <Table className="min-w-full">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-xs sm:text-sm">Tipo de Vidrio</TableHead>
-                            <TableHead className="text-xs sm:text-sm">Dimensiones</TableHead>
-                            <TableHead className="text-xs sm:text-sm">Cant.</TableHead>
-                            <TableHead className="text-xs sm:text-sm">Acciones</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {orderItems.map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="text-xs sm:text-sm">{item.glassType}</TableCell>
-                              <TableCell className="text-xs sm:text-sm">
-                                {item.width}mm x {item.height}mm
-                              </TableCell>
-                              <TableCell className="text-xs sm:text-sm">{item.quantity}</TableCell>
-                              <TableCell className="text-xs sm:text-sm">
-                                <div className="flex gap-2">
-                                  <Button variant="outline" size="icon" onClick={() => handleEditItem(item.id)}>
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="destructive" size="icon" onClick={() => handleRemoveItem(item.id)}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {orderItems.length > 0 && (
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-center mb-3">
-                    <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
-                      3
-                    </div>
-                    <h3 className="font-medium">¡Listo para optimizar!</h3>
-                  </div>
-
-                  <div className="space-y-4">
-                    <p className="text-sm text-gray-700">
-                      Viprou va a distribuir tus cortes en las hojas de vidrio disponibles para minimizar el desperdicio
-                      y ahorrarte plata.
+                {/* Visualización */}
+                {selectedGlassType && (
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-medium mb-2 flex items-center justify-between">
+                      <span>Visualización de Corte</span>
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Vista previa</span>
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Viprou utilizará esta información para calcular la distribución óptima de tus cortes.
                     </p>
+                    <GlassCutVisualization
+                      width={measurementUnit === "mm" ? Number(width) || 0 : (Number(width) || 0) * 10}
+                      height={measurementUnit === "mm" ? Number(height) || 0 : (Number(height) || 0) * 10}
+                      glassType={selectedGlassType || "Laminado 3+3 Incoloro"}
+                      glassWidth={glassWidth || 3600}
+                      glassHeight={glassHeight || 2500}
+                      quantity={Number(quantity) || 1}
+                    />
+                  </div>
+                )}
 
-                    <Button onClick={handleProcessOrder} className="w-full bg-blue-600 hover:bg-blue-700">
-                      Optimizar mi pedido
-                    </Button>
+                {/* Calculadora de ahorro */}
+                {showSavingsCalculator && (
+                  <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                    <h3 className="font-semibold text-green-800 mb-3 flex items-center">
+                      <span className="text-lg mr-2">💸</span>
+                      Calculadora de Ahorro Viprou
+                    </h3>
 
-                    <div className="text-center text-xs text-gray-500">
-                      ¿Querés ver cómo funciona la optimización?{" "}
-                      <Button variant="link" size="sm" onClick={() => setShowSystemInfo(true)} className="underline">
-                        Ver información del sistema
-                      </Button>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700">Precio estándar sin optimización:</span>
+                        <span className="line-through text-red-500">
+                          ${(nonOptimizedPrice || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between font-bold">
+                        <span className="text-gray-800">Lo que pagás usando la IA de Viprou:</span>
+                        <span className="text-green-600">
+                          ${(totalPrice || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+
+                      {(nonOptimizedPrice || 0) - (totalPrice || 0) > 0 ? (
+                        <div className="bg-white p-3 rounded-md">
+                          <div className="flex items-center mb-2">
+                            <span className="text-lg mr-2">🟢</span>
+                            <p className="font-medium text-green-800">
+                              ¡Ahorro Viprou: $ $
+                              {((nonOptimizedPrice || 0) - (totalPrice || 0)).toLocaleString("es-AR", {
+                                minimumFractionDigits: 2,
+                              })}
+                              !
+                            </p>
+                          </div>
+                          <p className="text-sm text-gray-700 mb-2">
+                            🟢 Nuestra inteligencia artificial analiza tus cortes y encuentra la forma más eficiente de
+                            usar el vidrio para que gastes menos.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-white p-3 rounded-md">
+                          <p className="text-sm text-gray-700 mb-2">
+                            🟢 Nuestra inteligencia artificial analiza tus cortes y encuentra la forma más eficiente de
+                            usar el vidrio para que gastes menos.
+                          </p>
+                          <p className="text-sm text-blue-700 mb-2">
+                            💡 Agregá más cortes y dejá que la IA trabaje por vos: cuanto más completo sea tu pedido,
+                            más plata podés ahorrar.
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                        <p className="text-sm text-blue-800">
+                          🧠 La IA de Viprou está diseñada para que vos no pagues de más.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+
+              {/* COLUMNA DERECHA */}
+              <div className="space-y-4">
+                {orderItems.length > 0 && (
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <div className="flex items-center mb-3">
+                      <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
+                        2
+                      </div>
+                      <h3 className="font-medium">Revisá tus cortes</h3>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-md p-3">
+                      <div className="overflow-x-auto">
+                        <Table className="min-w-full">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-xs sm:text-sm">Tipo de Vidrio</TableHead>
+                              <TableHead className="text-xs sm:text-sm">Dimensiones</TableHead>
+                              <TableHead className="text-xs sm:text-sm">Cant.</TableHead>
+                              <TableHead className="text-xs sm:text-sm">Acciones</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {orderItems.map((item) => (
+                              <TableRow key={item.id}>
+                                <TableCell className="text-xs sm:text-sm">{item.glassType}</TableCell>
+                                <TableCell className="text-xs sm:text-sm">
+                                  {item.width}mm x {item.height}mm
+                                </TableCell>
+                                <TableCell className="text-xs sm:text-sm">{item.quantity}</TableCell>
+                                <TableCell className="text-xs sm:text-sm">
+                                  <div className="flex gap-2">
+                                    <Button variant="outline" size="icon" onClick={() => handleEditItem(item.id)}>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="destructive" size="icon" onClick={() => handleRemoveItem(item.id)}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {orderItems.length > 0 && (
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <div className="flex items-center mb-3">
+                      <div className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2">
+                        3
+                      </div>
+                      <h3 className="font-medium">¡Listo para optimizar!</h3>
+                    </div>
+
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-700">
+                        Viprou va a distribuir tus cortes en las hojas de vidrio disponibles para minimizar el
+                        desperdicio y ahorrarte plata.
+                      </p>
+
+                      <Button onClick={handleProcessOrder} className="w-full bg-blue-600 hover:bg-blue-700">
+                        Optimizar mi pedido
+                      </Button>
+
+                      <div className="text-center text-xs text-gray-500">
+                        ¿Querés ver cómo funciona la optimización?{" "}
+                        <Button variant="link" size="sm" onClick={() => setShowSystemInfo(true)} className="underline">
+                          Ver información del sistema
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   )
 }
