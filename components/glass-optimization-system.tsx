@@ -878,6 +878,72 @@ ${customerComments.trim()}`
   // Vista principal
   return (
     <div className="w-full">
+      <header className="flex items-center justify-between bg-white px-6 py-3 border-b border-gray-200 font-sans mb-6">
+        {/* Logo */}
+        <a href="https://viprou.com" className="font-bold text-xl text-black no-underline">
+          Viprou
+        </a>
+
+        {/* Navigation Menu - Hidden on mobile, shown on desktop */}
+        <nav className="hidden lg:block">
+          <ul className="flex gap-5 list-none m-0 p-0 font-weight-300">
+            <li>
+              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors font-normal">
+                Espejos
+              </a>
+            </li>
+            <li>
+              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+                Tapas de Mesas
+              </a>
+            </li>
+            <li>
+              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+                Estantes Flotantes
+              </a>
+            </li>
+            <li>
+              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+                Mamparas
+              </a>
+            </li>
+            <li>
+              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+                Puertas de Ducha
+              </a>
+            </li>
+            <li>
+              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+                Barandas
+              </a>
+            </li>
+            <li>
+              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+                Ventanas
+              </a>
+            </li>
+            <li>
+              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+                Puertas
+              </a>
+            </li>
+            <li>
+              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+                Techos
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        {/* CTA Button */}
+        <a
+          href="#"
+          className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold no-underline hover:bg-blue-700 transition-colors"
+        >
+          Comprá Ahora
+        </a>
+      </header>
+
       <Card className="shadow-lg mb-6">
         <CardHeader className="px-4 py-6 sm:px-6 sm:py-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
