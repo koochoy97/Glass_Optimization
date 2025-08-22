@@ -539,7 +539,7 @@ ${customerComments.trim()}`
       } else {
         console.log("[v0] No category parameter found, loading all glass types...")
 
-        const allGlassTypesResponse = await fetch("https://viprou.com/wp-json/wp/v2/tipo-de-vidrio/")
+        const allGlassTypesResponse = await fetch("https://viprou.com/wp-json/wp/v2/tipo-de-vidrio?per_page=100")
 
         if (!allGlassTypesResponse.ok) {
           throw new Error("Failed to fetch glass types from API")
