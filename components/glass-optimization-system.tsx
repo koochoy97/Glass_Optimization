@@ -878,7 +878,7 @@ ${customerComments.trim()}`
   // Vista principal
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 w-full flex items-center justify-between bg-white px-6 py-3 border-b border-gray-200 font-sans shadow-sm">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full flex items-center justify-between bg-white px-6 py-3 border-b border-gray-200 font-sans shadow-sm mx-[30px]">
         {/* Logo */}
         <a href="https://viprou.com" className="font-bold text-xl text-black no-underline">
           Viprou
@@ -1128,89 +1128,45 @@ ${customerComments.trim()}`
                               )}
 
                               {organizedGlassTypes.incoloroHalfSheetProducts.length > 0 && (
-                                <>
-                                  <div className="px-4 py-3 text-xs font-semibold text-blue-700 bg-blue-50 border-b border-blue-200">
-                                    🔷 Vidrios que se pueden vender por media hoja
-                                  </div>
-                                  <div className="pb-2">
-                                    {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
-                                      <SelectItem
-                                        key={glass.name}
-                                        value={glass.name}
-                                        className="px-4 py-3 min-h-[80px] flex items-start cursor-pointer hover:bg-gray-50 mx-2 my-1 rounded-md"
-                                      >
-                                        <div className="flex items-start w-full gap-3">
-                                          <div className="text-lg mt-0.5 flex-shrink-0">🪟</div>
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex flex-col gap-y-1">
-                                              <div className="font-medium text-sm leading-tight text-gray-900 break-words">
-                                                {glass.name}
-                                              </div>
-                                              <div className="text-xs text-gray-600">
-                                                Precio Viprou:{" "}
-                                                <span className="font-semibold text-gray-800">
-                                                  $
-                                                  {(glass.pricePerM2 || 0).toLocaleString("es-AR", {
-                                                    maximumFractionDigits: 0,
-                                                  })}
-                                                  /m²
-                                                </span>
-                                              </div>
-                                              <div className="flex items-center justify-between mt-1">
-                                                <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                                                  ½ hoja disponible
-                                                </div>
-                                              </div>
-                                            </div>
+                                <div className="pb-2">
+                                  {organizedGlassTypes.incoloroHalfSheetProducts.map((glass) => (
+                                    <SelectItem
+                                      key={glass.name}
+                                      value={glass.name}
+                                      className="px-4 py-3 flex items-center cursor-pointer hover:bg-gray-50 mx-2 my-1 rounded-md"
+                                    >
+                                      <div className="flex items-center w-full gap-3">
+                                        <div className="text-lg flex-shrink-0">🪟</div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium text-sm leading-tight text-gray-900 break-words">
+                                            {glass.name}
                                           </div>
                                         </div>
-                                      </SelectItem>
-                                    ))}
-                                  </div>
-                                </>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </div>
                               )}
 
                               {organizedGlassTypes.nonIncoloroProducts.length > 0 && (
-                                <>
-                                  <div className="px-4 py-3 text-xs font-semibold text-orange-700 bg-orange-50 border-b border-orange-200 mt-2">
-                                    🔶 Vidrios que se venden por hoja entera
-                                  </div>
-                                  <div className="pb-2">
-                                    {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
-                                      <SelectItem
-                                        key={glass.name}
-                                        value={glass.name}
-                                        className="px-4 py-3 min-h-[80px] flex items-start cursor-pointer hover:bg-gray-50 mx-2 my-1 rounded-md"
-                                      >
-                                        <div className="flex items-start w-full gap-3">
-                                          <div className="text-lg mt-0.5 flex-shrink-0">📐</div>
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex flex-col gap-y-1">
-                                              <div className="font-medium text-sm leading-tight text-gray-900 break-words">
-                                                {glass.name}
-                                              </div>
-                                              <div className="text-xs text-gray-600">
-                                                Precio Viprou:{" "}
-                                                <span className="font-semibold text-gray-800">
-                                                  $
-                                                  {(glass.pricePerM2 || 0).toLocaleString("es-AR", {
-                                                    maximumFractionDigits: 0,
-                                                  })}
-                                                  /m²
-                                                </span>
-                                              </div>
-                                              <div className="flex items-center justify-between mt-1">
-                                                <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                                  Solo hoja completa
-                                                </div>
-                                              </div>
-                                            </div>
+                                <div className="pb-2">
+                                  {organizedGlassTypes.nonIncoloroProducts.map((glass) => (
+                                    <SelectItem
+                                      key={glass.name}
+                                      value={glass.name}
+                                      className="px-4 py-3 flex items-center cursor-pointer hover:bg-gray-50 mx-2 my-1 rounded-md"
+                                    >
+                                      <div className="flex items-center w-full gap-3">
+                                        <div className="text-lg flex-shrink-0">📐</div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium text-sm leading-tight text-gray-900 break-words">
+                                            {glass.name}
                                           </div>
                                         </div>
-                                      </SelectItem>
-                                    ))}
-                                  </div>
-                                </>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </div>
                               )}
                             </div>
                           </SelectContent>
