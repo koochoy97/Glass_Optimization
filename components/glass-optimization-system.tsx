@@ -82,6 +82,8 @@ export default function GlassOptimizationSystem() {
   const [isLoadingGlassTypes, setIsLoadingGlassTypes] = useState(true)
   const [glassTypesError, setGlassTypesError] = useState("")
 
+  const [categoryTitle, setCategoryTitle] = useState("")
+
   // Función para verificar si un vidrio es Float Incoloro 2.2mm
   const isFloat22mm = (glassTypeName: string): boolean => {
     return glassTypeName === "Float Incoloro 2.2mm"
@@ -494,31 +496,40 @@ ${customerComments.trim()}`
 
       console.log("[v0] Category ID from URL:", categoryId)
 
+      // Step 1: Always load ALL glass types first
+      console.log("[v0] Step 1: Loading all glass types...")
+      const allGlassTypesResponse = await fetch("https://viprou.com/wp-json/wp/v2/tipo-de-vidrio?per_page=100")
+
+      if (!allGlassTypesResponse.ok) {
+        throw new Error("Failed to fetch glass types from API")
+      }
+
+      const allGlassTypes = await allGlassTypesResponse.json()
+      console.log("[v0] All glass types loaded:", allGlassTypes.length, "items")
+
+      // Step 2: If categoryId exists, load category and filter
       if (categoryId) {
-        console.log("[v0] Loading category and glass types data in parallel...")
+        console.log("[v0] Step 2: Loading category data for ID:", categoryId)
 
-        // Load both APIs in parallel with dynamic category ID
-        const [categoryResponse, allGlassTypesResponse] = await Promise.all([
-          fetch(`https://viprou.com/wp-json/wp/v2/categoria-de-vidrio/${categoryId}`),
-          fetch("https://viprou.com/wp-json/wp/v2/tipo-de-vidrio/"),
-        ])
+        const categoryResponse = await fetch(`https://viprou.com/wp-json/wp/v2/categoria-de-vidrio/${categoryId}`)
 
-        if (!categoryResponse.ok || !allGlassTypesResponse.ok) {
-          throw new Error("Failed to fetch data from API")
+        if (!categoryResponse.ok) {
+          throw new Error("Failed to fetch category from API")
         }
 
         const categoryData = await categoryResponse.json()
-        const allGlassTypes = await allGlassTypesResponse.json()
-
         console.log("[v0] Category data received:", categoryData)
-        console.log("[v0] All glass types received:", allGlassTypes)
+
+        // Set category title for display
+        setCategoryTitle(categoryData.title?.rendered || "")
+        console.log("[v0] Category title set:", categoryData.title?.rendered)
 
         // Extract glass type IDs from category
         const glassTypeIds = categoryData.acf?.tipo_de_vidrio || []
-        console.log("[v0] Glass type IDs extracted:", glassTypeIds)
+        console.log("[v0] Glass type IDs from category:", glassTypeIds)
 
-        // Filter and transform glass types
-        console.log("[v0] Filtering glass types based on category IDs...")
+        // Step 3: Filter glass types based on category IDs
+        console.log("[v0] Step 3: Filtering glass types based on category IDs...")
         const filteredGlassTypes = allGlassTypes
           .filter((item: any) => glassTypeIds.includes(item.id))
           .map((item: any) => {
@@ -533,34 +544,29 @@ ${customerComments.trim()}`
               maxHeight: item.acf?.height || 2500,
             }
           })
+          .filter((item: any) => item.name !== "Sin nombre" && item.pricePerM2 > 0) // Filter out invalid items
 
         console.log("[v0] Final filtered glass types:", filteredGlassTypes)
         setGlassTypes(filteredGlassTypes)
       } else {
-        console.log("[v0] No category parameter found, loading all glass types...")
+        // Step 3 (alternative): No category, show all glass types
+        console.log("[v0] No category parameter found, showing all glass types...")
+        setCategoryTitle("") // Clear category title
 
-        const allGlassTypesResponse = await fetch("https://viprou.com/wp-json/wp/v2/tipo-de-vidrio?per_page=100")
+        const transformedGlassTypes = allGlassTypes
+          .map((item: any) => {
+            console.log("[v0] Processing glass type ID:", item.id, "ACF data:", item.acf)
 
-        if (!allGlassTypesResponse.ok) {
-          throw new Error("Failed to fetch glass types from API")
-        }
-
-        const allGlassTypes = await allGlassTypesResponse.json()
-        console.log("[v0] All glass types received (no filter):", allGlassTypes)
-
-        // Transform all glass types without filtering
-        const transformedGlassTypes = allGlassTypes.map((item: any) => {
-          console.log("[v0] Processing glass type ID:", item.id, "ACF data:", item.acf)
-
-          return {
-            id: item.id,
-            name: item.title?.rendered || item.acf?.name || "Sin nombre",
-            thickness: item.acf?.thickness || 0,
-            pricePerM2: item.acf?.price || 0,
-            maxWidth: item.acf?.width || 3600,
-            maxHeight: item.acf?.height || 2500,
-          }
-        })
+            return {
+              id: item.id,
+              name: item.title?.rendered || item.acf?.name || "Sin nombre",
+              thickness: item.acf?.thickness || 0,
+              pricePerM2: item.acf?.price || 0,
+              maxWidth: item.acf?.width || 3600,
+              maxHeight: item.acf?.height || 2500,
+            }
+          })
+          .filter((item: any) => item.name !== "Sin nombre" && item.pricePerM2 > 0) // Filter out invalid items
 
         console.log("[v0] Final transformed glass types (all):", transformedGlassTypes)
         setGlassTypes(transformedGlassTypes)
@@ -878,7 +884,7 @@ ${customerComments.trim()}`
   // Vista principal
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 w-full flex items-center justify-between bg-white px-6 py-3 border-b border-gray-200 font-sans shadow-sm mx-[30px]">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full flex items-center justify-between bg-white px-6 py-3 border-b border-gray-200 font-sans shadow-sm mx-[0]">
         {/* Logo */}
         <a href="https://viprou.com" className="font-bold text-xl text-black no-underline">
           Viprou
@@ -1464,6 +1470,15 @@ ${customerComments.trim()}`
 
               {/* COLUMNA DERECHA */}
               <div className="space-y-4">
+                {categoryTitle && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                      <span className="text-blue-800 font-medium">Categoría: {categoryTitle}</span>
+                    </div>
+                  </div>
+                )}
+
                 {orderItems.length > 0 && (
                   <div className="bg-white p-4 rounded-lg border border-gray-200">
                     <div className="flex items-center mb-3">
