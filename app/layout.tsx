@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Viprou - Cotización rápida de vidrios",
   description: "Sistema de optimización y cotización de vidrios con inteligencia artificial",
+  icons: {
+    icon: "https://viprou.com/wp-content/uploads/2025/08/cropped-ChatGPT-Image-21-ago-2025-08_13_36-p.m.-1-1-1-1.png",
+  },
     generator: 'v0.app'
 }
 
