@@ -129,7 +129,7 @@ export default function GlassOptimizationSystem() {
     )
 
     return {
-      incoloroHalfSheetProducts: incoloroHalfSheetProducts.sort((a, b) => (a.thickness || 0) - (b.thickness || 0)),
+      incoloroHalfSheetProducts: incoloroHalfSheetProducts.sort((a, b) => a.name.localeCompare(b.name)),
       nonIncoloroProducts: allFullSheetOnlyProducts,
       hasResults: incoloroHalfSheetProducts.length > 0 || allFullSheetOnlyProducts.length > 0,
     }
@@ -1006,19 +1006,19 @@ ${customerComments.trim()}`
                     <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
                       <div className="text-2xl mb-2">🔍</div>
                       <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 1</h3>
-                      <p className="text-blue-700 text-xs sm:text-sm">Elegí el tipo de vidrio</p>
+                      <p className="text-blue-700 text-xs sm:text-sm">Elegí el tipo de vidrio.</p>
                     </div>
 
                     <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
                       <div className="text-2xl mb-2">📏</div>
                       <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 2</h3>
-                      <p className="text-blue-700 text-xs sm:text-sm">Indicá las medidas</p>
+                      <p className="text-blue-700 text-xs sm:text-sm">Indicá las medidas y cantidades.</p>
                     </div>
 
                     <div className="flex flex-col items-center text-center bg-white/60 p-3 sm:p-4 rounded-lg border border-blue-200">
                       <div className="text-2xl mb-2">➕</div>
                       <h3 className="font-semibold text-blue-800 text-sm sm:text-base">Paso 3</h3>
-                      <p className="text-blue-700 text-xs sm:text-sm">Agregá tu corte</p>
+                      <p className="text-blue-700 text-xs sm:text-sm">Cargá tu corte y hacé el pedido!</p>
                     </div>
                   </div>
                 </div>
