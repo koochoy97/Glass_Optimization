@@ -239,7 +239,7 @@ export function calculateOptimizedPrice(
   )
 
   // Calcular el precio basado en hojas completas y medias hojas
-  const fullSheetPrice = glassType.price * ((glassType.width / 1000) * (glassType.height / 1000))
+  const fullSheetPrice = glassType.pricePerM2 * ((glassType.maxWidth / 1000) * (glassType.maxHeight / 1000))
   const halfSheetPrice = fullSheetPrice / 2
 
   const totalPrice = fullSheets * fullSheetPrice + halfSheets * halfSheetPrice
@@ -267,7 +267,7 @@ export function calculateItemOptimizedPrice(
   const itemArea = (item.width / 1000) * (item.height / 1000) * item.quantity
   const { fullSheets, halfSheets, totalArea } = calculateSheetsNeeded(itemArea, glassType)
 
-  const fullSheetPrice = glassType.price * ((glassType.width / 1000) * (glassType.height / 1000))
+  const fullSheetPrice = glassType.pricePerM2 * ((glassType.maxWidth / 1000) * (glassType.maxHeight / 1000))
   const halfSheetPrice = fullSheetPrice / 2
   const totalPrice = fullSheets * fullSheetPrice + halfSheets * halfSheetPrice
 
