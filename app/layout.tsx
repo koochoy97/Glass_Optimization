@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import Script from "next/script"
+import FloatingWhatsAppButton from "@/components/floating-whatsapp-button"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -90,6 +91,7 @@ export default function RootLayout({
           />
         </noscript>
         {children}
+        <FloatingWhatsAppButton />
       </body>
     </html>
   )
