@@ -71,6 +71,55 @@ export function CheckoutForm() {
 
     setError("")
 
+    try {
+      const orderData = {
+        customer: {
+          name: customerName.trim(),
+          phone: customerPhone.trim(),
+          comments: customerComments.trim(),
+        },
+        order: {
+          categoryId: categoryId,
+          categoryName: quotationData.categoryName,
+          glassType: quotationData.glassType,
+          dimensions: {
+            width: quotationData.width,
+            height: quotationData.height,
+            unit: quotationData.unit,
+          },
+          quantity: Number(quotationData.quantity),
+          thickness: quotationData.thickness,
+          totalPrice: quotationData.price,
+        },
+        timestamp: new Date().toISOString(),
+        source: "glass-quotation-system",
+      }
+
+      console.log("[v0] Sending order data to webhook:", orderData)
+
+      // Send to webhook
+      const webhookResponse = await fetch("/api/webhook", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+      })
+
+      if (!webhookResponse.ok) {
+        console.error("[v0] Webhook failed:", webhookResponse.status, webhookResponse.statusText)
+        const errorText = await webhookResponse.text()
+        console.error("[v0] Webhook error response:", errorText)
+      } else {
+        const responseData = await webhookResponse.json()
+        console.log("[v0] Webhook response:", responseData)
+        console.log("[v0] Webhook sent successfully with status:", webhookResponse.status)
+      }
+    } catch (error) {
+      console.error("[v0] Error sending webhook:", error)
+      // Don't block the user flow, just log the error
+    }
+
     const whatsappText = encodeURIComponent(
       `Hola, soy ${customerName.trim()} y quiero confirmar mi pedido de vidrios:\n\n📱 Mi teléfono: ${customerPhone.trim()}\n\n📋 Detalle del pedido:\n- Categoría: ${quotationData.categoryName}\n- Tipo de vidrio: ${quotationData.glassType}\n- Dimensiones: ${quotationData.width}${quotationData.unit} x ${quotationData.height}${quotationData.unit}\n- Cantidad: ${quotationData.quantity} pieza${Number(quotationData.quantity) > 1 ? "s" : ""}\n- Espesor: ${quotationData.thickness}mm\n\n💰 Precio total: $${quotationData.price.toLocaleString(
         "es-AR",
