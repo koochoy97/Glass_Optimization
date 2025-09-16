@@ -894,47 +894,74 @@ ${customerComments.trim()}`
         <nav className="hidden lg:block">
           <ul className="flex gap-5 list-none m-0 p-0 font-weight-300">
             <li>
-              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors font-normal">
+              <a
+                href="/cotizacion?product=344"
+                className="no-underline text-black text-sm hover:text-blue-600 transition-colors font-normal"
+              >
                 Espejos
               </a>
             </li>
             <li>
-              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+              <a
+                href="/cotizacion?product=344"
+                className="no-underline text-black text-sm hover:text-blue-600 transition-colors"
+              >
                 Tapas de Mesas
               </a>
             </li>
             <li>
-              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+              <a
+                href="/cotizacion?product=344"
+                className="no-underline text-black text-sm hover:text-blue-600 transition-colors"
+              >
                 Estantes Flotantes
               </a>
             </li>
             <li>
-              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+              <a
+                href="/cotizacion?product=344"
+                className="no-underline text-black text-sm hover:text-blue-600 transition-colors"
+              >
                 Mamparas
               </a>
             </li>
             <li>
-              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+              <a
+                href="/cotizacion?product=344"
+                className="no-underline text-black text-sm hover:text-blue-600 transition-colors"
+              >
                 Puertas de Ducha
               </a>
             </li>
             <li>
-              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+              <a
+                href="/cotizacion?product=344"
+                className="no-underline text-black text-sm hover:text-blue-600 transition-colors"
+              >
                 Barandas
               </a>
             </li>
             <li>
-              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+              <a
+                href="/cotizacion?product=344"
+                className="no-underline text-black text-sm hover:text-blue-600 transition-colors"
+              >
                 Ventanas
               </a>
             </li>
             <li>
-              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+              <a
+                href="/cotizacion?product=344"
+                className="no-underline text-black text-sm hover:text-blue-600 transition-colors"
+              >
                 Puertas
               </a>
             </li>
             <li>
-              <a href="#" className="no-underline text-black text-sm hover:text-blue-600 transition-colors">
+              <a
+                href="/cotizacion?product=344"
+                className="no-underline text-black text-sm hover:text-blue-600 transition-colors"
+              >
                 Techos
               </a>
             </li>
@@ -943,7 +970,7 @@ ${customerComments.trim()}`
 
         {/* CTA Button */}
         <a
-          href="#"
+          href="/cotizacion?product=344"
           className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold no-underline hover:bg-blue-700 transition-colors"
         >
           Comprá Ahora
