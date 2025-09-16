@@ -27,6 +27,13 @@ export default function GlassProductQuotation() {
   const router = useRouter()
   const productParam = searchParams.get("product")
 
+  useEffect(() => {
+    if (!productParam) {
+      router.replace("/")
+      return
+    }
+  }, [productParam, router])
+
   const [allGlassTypes, setAllGlassTypes] = useState<TransformedGlassType[]>([])
   const [availableGlassTypes, setAvailableGlassTypes] = useState<TransformedGlassType[]>([])
   const [categoryName, setCategoryName] = useState<string>("")
@@ -196,6 +203,24 @@ export default function GlassProductQuotation() {
     }
   }
 
+  const handleOrderClick = () => {
+    if (!currentGlassType || !calculations.totalPrice) return
+
+    const checkoutParams = new URLSearchParams({
+      categoryId: productParam || "343",
+      categoryName: categoryName,
+      glassType: currentGlassType.name,
+      width: width.toString(),
+      height: height.toString(),
+      quantity: quantity.toString(),
+      unit: unit,
+      thickness: currentGlassType.thickness.toString(),
+      price: calculations.totalPrice.toString(),
+    })
+
+    router.push(`/checkout?${checkoutParams.toString()}`)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -213,30 +238,6 @@ export default function GlassProductQuotation() {
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <Button onClick={() => window.location.reload()}>Intentar de nuevo</Button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!productParam) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white border-b">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Cotización de Productos de Vidrio</h1>
-            <p className="text-gray-600 mt-2 text-sm sm:text-base">
-              {allGlassTypes.length} tipos de vidrio disponibles
-            </p>
-          </div>
-        </div>
-
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">
-              Usando categoría hardcodeada ID 344 para pruebas. Los datos se cargan automáticamente.
-            </p>
-            <p className="text-sm text-gray-500">Total de tipos de vidrio cargados: {allGlassTypes.length}</p>
-          </div>
         </div>
       </div>
     )
@@ -261,8 +262,10 @@ export default function GlassProductQuotation() {
                 Volver
               </Button>
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">{categoryName}</h1>
-                <p className="text-gray-600 text-xs sm:text-base">Selecciona el tipo de vidrio que necesitas</p>
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
+                  Selecciona el tipo de vidrio que necesitas
+                </h1>
+                <p className="text-gray-600 text-xs sm:text-base">Selecciona una categoría</p>
               </div>
             </div>
           </div>
@@ -559,6 +562,7 @@ export default function GlassProductQuotation() {
                         size="lg"
                         className="w-full px-12 py-4 text-lg font-semibold rounded-xl shadow-lg"
                         disabled={!calculations.totalPrice}
+                        onClick={handleOrderClick}
                       >
                         Quiero hacer el pedido
                       </Button>
@@ -575,7 +579,12 @@ export default function GlassProductQuotation() {
         </div>
 
         <div className="fixed bottom-4 left-4 right-4 lg:hidden">
-          <Button size="lg" className="w-full rounded-xl shadow-lg h-14 text-base font-semibold">
+          <Button
+            size="lg"
+            className="w-full rounded-xl shadow-lg h-14 text-base font-semibold"
+            disabled={!calculations.totalPrice}
+            onClick={handleOrderClick}
+          >
             Quiero hacer el pedido
           </Button>
         </div>
