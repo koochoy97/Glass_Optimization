@@ -155,9 +155,10 @@ export default function GlassProductQuotation() {
   }, [availableGlassTypes])
 
   const displayGlassTypes = useMemo(() => {
+    const isWindowProduct = productParam === "342"
     const hasNormalGlass = categorizedGlassTypes.normalGlass.length > 0
     const hasSafetyGlass = categorizedGlassTypes.safetyGlass.length > 0
-    const needsCategorization = hasNormalGlass && hasSafetyGlass
+    const needsCategorization = isWindowProduct && hasNormalGlass && hasSafetyGlass
 
     if (needsCategorization) {
       if (selectedGlassCategory === "safety") return categorizedGlassTypes.safetyGlass
@@ -166,10 +167,12 @@ export default function GlassProductQuotation() {
     } else {
       return availableGlassTypes
     }
-  }, [availableGlassTypes, selectedGlassCategory, categorizedGlassTypes])
+  }, [availableGlassTypes, selectedGlassCategory, categorizedGlassTypes, productParam])
 
   const needsCategorization =
-    categorizedGlassTypes.normalGlass.length > 0 && categorizedGlassTypes.safetyGlass.length > 0
+    productParam === "342" &&
+    categorizedGlassTypes.normalGlass.length > 0 &&
+    categorizedGlassTypes.safetyGlass.length > 0
 
   const calculations = useMemo(() => {
     if (!currentGlassType || !width || !height) {

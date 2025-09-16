@@ -89,7 +89,7 @@ export function transformGlassType(apiGlassType: GlassType) {
     description:
       apiGlassType.acf.description ||
       `${apiGlassType.acf.name || apiGlassType.title.rendered} ${apiGlassType.acf.thickness}mm`,
-    isSafety: codigo.startsWith("LAMI"),
+    isSafety: codigo.startsWith("LAM"),
     hasSolarControl: codigo === "LAMSV44",
   }
 }

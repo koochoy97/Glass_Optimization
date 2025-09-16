@@ -264,7 +264,7 @@ export const glassTypes: GlassType[] = productCategories.flatMap((category) => c
 
 // Helper functions to categorize glass types
 export const isLaminatedGlass = (glassType: GlassType): boolean => {
-  return glassType.code.startsWith("LAMI") || glassType.code.startsWith("MSIV")
+  return glassType.code.startsWith("LAM")
 }
 
 export const categorizeGlassTypes = (glassTypes: GlassType[]) => {
