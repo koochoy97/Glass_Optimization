@@ -147,51 +147,69 @@ export default function GlassProductQuotation() {
     const singlePieceArea = widthInMeters * heightInMeters
     const totalArea = singlePieceArea * quantity
 
+    console.log(
+      "[v0] Price calculation - Quantity:",
+      quantity,
+      "Single area:",
+      singlePieceArea,
+      "Total area:",
+      totalArea,
+    )
+
     // Glass types that can use 1/3 sheet (1200x2500mm = 3m²)
     const canUseThirdSheet = ["LAMI33", "FL103", "FL104"].includes(currentGlassType.code)
 
-    let billedArea: number
+    let billedAreaPerPiece: number
     let isThirdSheet = false
     let isHalfSheet = false
 
     if (canUseThirdSheet) {
       // Can use 1/3 sheet minimum (3 m²)
-      if (totalArea <= 3.0) {
-        billedArea = 3.0 // 1/3 sheet
+      if (singlePieceArea <= 3.0) {
+        billedAreaPerPiece = 3.0 // 1/3 sheet
         isThirdSheet = true
-      } else if (totalArea <= 4.5) {
-        billedArea = 4.5 // 1/2 sheet
+      } else if (singlePieceArea <= 4.5) {
+        billedAreaPerPiece = 4.5 // 1/2 sheet
         isHalfSheet = true
       } else {
-        billedArea = 9.0 // Full sheet
+        billedAreaPerPiece = 9.0 // Full sheet
       }
     } else {
       // Requires minimum 1/2 sheet (1800x2500mm = 4.5m²)
-      if (totalArea <= 4.5) {
-        billedArea = 4.5 // 1/2 sheet
+      if (singlePieceArea <= 4.5) {
+        billedAreaPerPiece = 4.5 // 1/2 sheet
         isHalfSheet = true
       } else {
-        billedArea = 9.0 // Full sheet
+        billedAreaPerPiece = 9.0 // Full sheet
       }
     }
 
     const unitPrice = currentGlassType.price
-    const totalPrice = unitPrice * billedArea
+    const totalPrice = unitPrice * billedAreaPerPiece * quantity
+
+    console.log(
+      "[v0] Final calculation - Billed area per piece:",
+      billedAreaPerPiece,
+      "Unit price:",
+      unitPrice,
+      "Quantity:",
+      quantity,
+      "Total price:",
+      totalPrice,
+    )
 
     return {
       area: totalArea,
       isThirdSheet,
       isHalfSheet,
-      billedArea,
+      billedArea: billedAreaPerPiece * quantity, // Total billed area for display
       unitPrice,
       totalPrice,
     }
   }, [currentGlassType, width, height, quantity, unit])
 
   const goBack = () => {
-    setSelectedGlassCategory("")
-    setSelectedGlassType("")
-    router.push("/")
+    window.open("https://viprou.com", "_self")
   }
 
   const goBackToCategory = () => {
@@ -261,11 +279,18 @@ export default function GlassProductQuotation() {
                 <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
                 Volver
               </Button>
-              <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
-                  Selecciona el tipo de vidrio que necesitas
-                </h1>
-                <p className="text-gray-600 text-xs sm:text-base">Selecciona una categoría</p>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
+                      Selecciona el tipo de vidrio que necesitas
+                    </h1>
+                    <p className="text-gray-600 text-xs sm:text-base">Selecciona una categoría</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xl sm:text-2xl font-bold text-black">Viprou</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -331,36 +356,41 @@ export default function GlassProductQuotation() {
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-8">
       <div className="bg-white border-b">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={goBackToCategory}
-              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
-            >
-              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-              Volver
-            </Button>
-            <div>
-              <h1 className="text-lg sm:text-2xl font-bold text-gray-900 flex items-center gap-2 sm:gap-3">
-                {categoryName}
-                {selectedGlassCategory === "safety" && (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    <Shield className="w-3 h-3 mr-1" />
-                    Vidrio de Seguridad
-                  </Badge>
-                )}
-                {selectedGlassCategory === "normal" && (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    <Eye className="w-3 h-3 mr-1" />
-                    Vidrio Normal
-                  </Badge>
-                )}
-              </h1>
-              <p className="text-gray-600 text-xs sm:text-base">
-                {displayGlassTypes.length} tipo{displayGlassTypes.length > 1 ? "s" : ""} de vidrio disponible
-                {displayGlassTypes.length > 1 ? "s" : ""}
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goBackToCategory}
+                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              >
+                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+                Volver
+              </Button>
+              <div>
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900 flex items-center gap-2 sm:gap-3">
+                  {categoryName}
+                  {selectedGlassCategory === "safety" && (
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      <Shield className="w-3 h-3 mr-1" />
+                      Vidrio de Seguridad
+                    </Badge>
+                  )}
+                  {selectedGlassCategory === "normal" && (
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      <Eye className="w-3 h-3 mr-1" />
+                      Vidrio Normal
+                    </Badge>
+                  )}
+                </h1>
+                <p className="text-gray-600 text-xs sm:text-base">
+                  {displayGlassTypes.length} tipo{displayGlassTypes.length > 1 ? "s" : ""} de vidrio disponible
+                  {displayGlassTypes.length > 1 ? "s" : ""}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-xl sm:text-2xl font-bold text-black">Viprou</div>
             </div>
           </div>
         </div>
@@ -462,7 +492,11 @@ export default function GlassProductQuotation() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      onClick={() => {
+                        const newQuantity = Math.max(1, quantity - 1)
+                        console.log("[v0] Decreasing quantity from", quantity, "to", newQuantity)
+                        setQuantity(newQuantity)
+                      }}
                       disabled={quantity <= 1}
                       className="h-10 w-10 p-0"
                     >
@@ -472,11 +506,18 @@ export default function GlassProductQuotation() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setQuantity(quantity + 1)}
+                      onClick={() => {
+                        const newQuantity = quantity + 1
+                        console.log("[v0] Increasing quantity from", quantity, "to", newQuantity)
+                        setQuantity(newQuantity)
+                      }}
                       className="h-10 w-10 p-0"
                     >
                       <Plus className="w-4 h-4" />
                     </Button>
+                  </div>
+                  <div className="text-center mt-2 text-sm text-gray-600">
+                    {quantity > 1 && `${quantity} piezas seleccionadas`}
                   </div>
                 </div>
               </CardContent>
