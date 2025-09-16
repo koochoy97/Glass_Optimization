@@ -46,6 +46,43 @@ export default function GlassProductQuotation() {
   const [height, setHeight] = useState<number>(0)
   const [quantity, setQuantity] = useState<number>(1)
   const [unit, setUnit] = useState<"cm" | "mm">("cm")
+  const [dimensionError, setDimensionError] = useState<string>("")
+
+  const parseDimensions = (widthValue: number, heightValue: number, unitValue: "cm" | "mm") => {
+    let widthMm: number
+    let heightMm: number
+
+    if (unitValue === "cm") {
+      widthMm = Math.round(widthValue * 10)
+      heightMm = Math.round(heightValue * 10)
+    } else {
+      widthMm = Math.round(widthValue)
+      heightMm = Math.round(heightValue)
+    }
+
+    if (widthMm > 3600 || heightMm > 2500) {
+      return {
+        error: "Dimensiones exceden el máximo permitido (3600×2500 mm).",
+        widthMm: 0,
+        heightMm: 0,
+      }
+    }
+
+    return {
+      error: "",
+      widthMm,
+      heightMm,
+    }
+  }
+
+  useEffect(() => {
+    if (width > 0 && height > 0) {
+      const validation = parseDimensions(width, height, unit)
+      setDimensionError(validation.error)
+    } else {
+      setDimensionError("")
+    }
+  }, [width, height, unit])
 
   useEffect(() => {
     async function loadData() {
@@ -55,7 +92,6 @@ export default function GlassProductQuotation() {
 
         console.log("[v0] Starting to load data...")
 
-        // First, fetch all glass types
         console.log("[v0] Fetching all glass types...")
         const allTypes = await fetchAllGlassTypes()
         console.log("[v0] All glass types response:", allTypes)
@@ -71,7 +107,6 @@ export default function GlassProductQuotation() {
         console.log("[v0] Category response:", category)
         setCategoryName(category.title.rendered)
 
-        // Filter glass types based on category's tipo_de_vidrio array
         console.log("[v0] Category tipo_de_vidrio array:", category.acf.tipo_de_vidrio)
 
         const filteredTypes = transformedTypes.filter((type) =>
@@ -120,7 +155,6 @@ export default function GlassProductQuotation() {
   }, [availableGlassTypes])
 
   const displayGlassTypes = useMemo(() => {
-    // Check if this is a "ventana" category (windows) - we'll determine this by checking if we have both safety and normal glass
     const hasNormalGlass = categorizedGlassTypes.normalGlass.length > 0
     const hasSafetyGlass = categorizedGlassTypes.safetyGlass.length > 0
     const needsCategorization = hasNormalGlass && hasSafetyGlass
@@ -142,13 +176,22 @@ export default function GlassProductQuotation() {
       return { area: 0, isThirdSheet: false, isHalfSheet: false, billedArea: 0, unitPrice: 0, totalPrice: 0 }
     }
 
-    const widthInMeters = unit === "cm" ? width / 100 : width / 1000
-    const heightInMeters = unit === "cm" ? height / 100 : height / 1000
+    const validation = parseDimensions(width, height, unit)
+    if (validation.error) {
+      return { area: 0, isThirdSheet: false, isHalfSheet: false, billedArea: 0, unitPrice: 0, totalPrice: 0 }
+    }
+
+    const widthInMeters = validation.widthMm / 1000
+    const heightInMeters = validation.heightMm / 1000
     const singlePieceArea = widthInMeters * heightInMeters
     const totalArea = singlePieceArea * quantity
 
     console.log(
-      "[v0] Price calculation - Quantity:",
+      "[v0] Price calculation - Dimensions in mm:",
+      validation.widthMm,
+      "×",
+      validation.heightMm,
+      "Quantity:",
       quantity,
       "Single area:",
       singlePieceArea,
@@ -156,7 +199,6 @@ export default function GlassProductQuotation() {
       totalArea,
     )
 
-    // Glass types that can use 1/3 sheet (1200x2500mm = 3m²)
     const canUseThirdSheet = ["LAMI33", "FL103", "FL104"].includes(currentGlassType.code)
 
     let billedAreaPerPiece: number
@@ -164,23 +206,21 @@ export default function GlassProductQuotation() {
     let isHalfSheet = false
 
     if (canUseThirdSheet) {
-      // Can use 1/3 sheet minimum (3 m²)
       if (singlePieceArea <= 3.0) {
-        billedAreaPerPiece = 3.0 // 1/3 sheet
+        billedAreaPerPiece = 3.0
         isThirdSheet = true
       } else if (singlePieceArea <= 4.5) {
-        billedAreaPerPiece = 4.5 // 1/2 sheet
+        billedAreaPerPiece = 4.5
         isHalfSheet = true
       } else {
-        billedAreaPerPiece = 9.0 // Full sheet
+        billedAreaPerPiece = 9.0
       }
     } else {
-      // Requires minimum 1/2 sheet (1800x2500mm = 4.5m²)
       if (singlePieceArea <= 4.5) {
-        billedAreaPerPiece = 4.5 // 1/2 sheet
+        billedAreaPerPiece = 4.5
         isHalfSheet = true
       } else {
-        billedAreaPerPiece = 9.0 // Full sheet
+        billedAreaPerPiece = 9.0
       }
     }
 
@@ -202,7 +242,7 @@ export default function GlassProductQuotation() {
       area: totalArea,
       isThirdSheet,
       isHalfSheet,
-      billedArea: billedAreaPerPiece * quantity, // Total billed area for display
+      billedArea: billedAreaPerPiece * quantity,
       unitPrice,
       totalPrice,
     }
@@ -351,7 +391,6 @@ export default function GlassProductQuotation() {
     )
   }
 
-  // Product quotation view
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-8">
       <div className="bg-white border-b">
@@ -398,7 +437,6 @@ export default function GlassProductQuotation() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
-          {/* Left Column - Configuration */}
           <div className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader className="pb-3 sm:pb-6">
@@ -441,13 +479,11 @@ export default function GlassProductQuotation() {
               </CardContent>
             </Card>
 
-            {/* Dimensions */}
             <Card>
               <CardHeader className="pb-3 sm:pb-6">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900">Medidas del Corte</h3>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Unit Selector */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Unidad de medida</label>
                   <Select value={unit} onValueChange={(value: "cm" | "mm") => setUnit(value)}>
@@ -461,7 +497,6 @@ export default function GlassProductQuotation() {
                   </Select>
                 </div>
 
-                {/* Dimensions Input */}
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Ancho ({unit})</label>
@@ -470,7 +505,7 @@ export default function GlassProductQuotation() {
                       placeholder={`Ancho en ${unit}`}
                       value={width || ""}
                       onChange={(e) => setWidth(Number(e.target.value) || 0)}
-                      className="text-center h-10 sm:h-11"
+                      className={`text-center h-10 sm:h-11 ${dimensionError ? "border-red-500" : ""}`}
                     />
                   </div>
                   <div>
@@ -480,12 +515,18 @@ export default function GlassProductQuotation() {
                       placeholder={`Alto en ${unit}`}
                       value={height || ""}
                       onChange={(e) => setHeight(Number(e.target.value) || 0)}
-                      className="text-center h-10 sm:h-11"
+                      className={`text-center h-10 sm:h-11 ${dimensionError ? "border-red-500" : ""}`}
                     />
                   </div>
                 </div>
 
-                {/* Quantity */}
+                {dimensionError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-red-700 text-sm font-medium">{dimensionError}</p>
+                    <p className="text-red-600 text-xs mt-1">Tamaño máximo: 360 × 250 cm (3600 × 2500 mm)</p>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Cantidad</label>
                   <div className="flex items-center justify-center gap-4">
@@ -524,9 +565,7 @@ export default function GlassProductQuotation() {
             </Card>
           </div>
 
-          {/* Right Column - Results */}
           <div className="space-y-4 sm:space-y-6">
-            {/* Technical Diagram */}
             <Card>
               <CardHeader className="pb-3 sm:pb-6">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900">Diagrama Técnico</h3>
@@ -539,8 +578,8 @@ export default function GlassProductQuotation() {
                         <div
                           className="border-2 border-dashed border-gray-400 bg-blue-50"
                           style={{
-                            width: Math.max(100, Math.min(180, width / 10)),
-                            height: Math.max(60, Math.min(120, height / 10)),
+                            width: Math.max(100, Math.min(180, (unit === "cm" ? width * 10 : width) / 10)),
+                            height: Math.max(60, Math.min(120, (unit === "cm" ? height * 10 : height) / 10)),
                           }}
                         />
                         <div className="absolute -top-6 left-0 right-0 text-center text-xs sm:text-sm font-medium">
@@ -562,7 +601,6 @@ export default function GlassProductQuotation() {
               </CardContent>
             </Card>
 
-            {/* Price Estimation */}
             <Card>
               <CardHeader className="pb-3 sm:pb-6">
                 <h3 className="text-base sm:text-lg font-semibold !text-gray-900" style={{ color: "#111827" }}>
@@ -602,7 +640,7 @@ export default function GlassProductQuotation() {
                       <Button
                         size="lg"
                         className="w-full px-12 py-4 text-lg font-semibold rounded-xl shadow-lg"
-                        disabled={!calculations.totalPrice}
+                        disabled={!calculations.totalPrice || !!dimensionError}
                         onClick={handleOrderClick}
                       >
                         Quiero hacer el pedido
@@ -623,7 +661,7 @@ export default function GlassProductQuotation() {
           <Button
             size="lg"
             className="w-full rounded-xl shadow-lg h-14 text-base font-semibold"
-            disabled={!calculations.totalPrice}
+            disabled={!calculations.totalPrice || !!dimensionError}
             onClick={handleOrderClick}
           >
             Quiero hacer el pedido
