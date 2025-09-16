@@ -74,6 +74,13 @@ export default function GlassProductQuotation() {
         )
         console.log("[v0] Filtered glass types:", filteredTypes)
         setAvailableGlassTypes(filteredTypes)
+
+        if (filteredTypes.length > 0) {
+          const middleIndex = Math.floor(filteredTypes.length / 2)
+          const defaultSelection = filteredTypes.length > 2 ? filteredTypes[middleIndex] : filteredTypes[0]
+          setSelectedGlassType(defaultSelection.code)
+          console.log("[v0] Auto-selected glass type:", defaultSelection.name)
+        }
       } catch (err) {
         console.log("[v0] Error in loadData:", err)
         setError("Error al cargar los datos. Por favor, intenta de nuevo.")
@@ -546,6 +553,16 @@ export default function GlassProductQuotation() {
                       <span>Precio Total:</span>
                       <span className="text-xl sm:text-2xl">${calculations.totalPrice.toLocaleString()}</span>
                     </div>
+
+                    <div className="mt-6">
+                      <Button
+                        size="lg"
+                        className="w-full px-12 py-4 text-lg font-semibold rounded-xl shadow-lg"
+                        disabled={!calculations.totalPrice}
+                      >
+                        Quiero hacer el pedido
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center text-gray-500 py-6 sm:py-8 text-sm sm:text-base">
@@ -554,20 +571,6 @@ export default function GlassProductQuotation() {
                 )}
               </CardContent>
             </Card>
-          </div>
-        </div>
-
-        <div className="hidden lg:block mt-8">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="flex justify-center">
-              <Button
-                size="lg"
-                className="px-12 py-4 text-lg font-semibold rounded-xl shadow-lg"
-                disabled={!calculations.totalPrice}
-              >
-                Quiero hacer el pedido
-              </Button>
-            </div>
           </div>
         </div>
 
