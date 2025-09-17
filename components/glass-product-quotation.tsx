@@ -47,6 +47,9 @@ export default function GlassProductQuotation() {
   const [quantity, setQuantity] = useState<number>(1)
   const [unit, setUnit] = useState<"cm" | "mm">("cm")
   const [dimensionError, setDimensionError] = useState<string>("")
+  const [widthTouched, setWidthTouched] = useState<boolean>(false)
+  const [heightTouched, setHeightTouched] = useState<boolean>(false)
+  const [formSubmitted, setFormSubmitted] = useState<boolean>(false)
 
   const parseDimensions = (widthValue: number, heightValue: number, unitValue: "cm" | "mm") => {
     let widthMm: number
@@ -78,11 +81,18 @@ export default function GlassProductQuotation() {
   useEffect(() => {
     if (width > 0 && height > 0) {
       const validation = parseDimensions(width, height, unit)
-      setDimensionError(validation.error)
+      const exceedsLimit = validation.error !== ""
+      const hasInteracted = widthTouched || heightTouched || formSubmitted
+
+      if (exceedsLimit && hasInteracted) {
+        setDimensionError(validation.error)
+      } else {
+        setDimensionError("")
+      }
     } else {
       setDimensionError("")
     }
-  }, [width, height, unit])
+  }, [width, height, unit, widthTouched, heightTouched, formSubmitted])
 
   useEffect(() => {
     async function loadData() {
@@ -265,7 +275,9 @@ export default function GlassProductQuotation() {
   }
 
   const handleOrderClick = () => {
-    if (!currentGlassType || !calculations.totalPrice) return
+    setFormSubmitted(true)
+
+    if (!currentGlassType || !calculations.totalPrice || dimensionError) return
 
     const checkoutParams = new URLSearchParams({
       categoryId: productParam || "343",
@@ -508,6 +520,7 @@ export default function GlassProductQuotation() {
                       placeholder={`Ancho en ${unit}`}
                       value={width || ""}
                       onChange={(e) => setWidth(Number(e.target.value) || 0)}
+                      onBlur={() => setWidthTouched(true)}
                       className={`text-center h-10 sm:h-11 ${dimensionError ? "border-red-500" : ""}`}
                     />
                   </div>
@@ -518,15 +531,17 @@ export default function GlassProductQuotation() {
                       placeholder={`Alto en ${unit}`}
                       value={height || ""}
                       onChange={(e) => setHeight(Number(e.target.value) || 0)}
+                      onBlur={() => setHeightTouched(true)}
                       className={`text-center h-10 sm:h-11 ${dimensionError ? "border-red-500" : ""}`}
                     />
                   </div>
                 </div>
 
+                <div className="text-sm text-gray-600">Tamaño máximo: 360 × 250 cm (3600 × 2500 mm).</div>
+
                 {dimensionError && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                     <p className="text-red-700 text-sm font-medium">{dimensionError}</p>
-                    <p className="text-red-600 text-xs mt-1">Tamaño máximo: 360 × 250 cm (3600 × 2500 mm)</p>
                   </div>
                 )}
 
