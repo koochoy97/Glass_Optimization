@@ -1,13 +1,26 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useMemo, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Plus, Minus, Shield, ChevronDown, AlertCircle, Info } from "lucide-react"
+import { ArrowLeft, Plus, Minus, Shield, ChevronDown, AlertCircle, Info, Loader2 } from "lucide-react"
+import { fetchAllGlassTypes, fetchGlassCategory, transformGlassType } from "@/lib/api"
+
+interface TransformedGlassType {
+  code: string
+  name: string
+  thickness: number
+  price: number
+  width: number
+  height: number
+  description: string
+  isSafety: boolean
+  hasSolarControl: boolean
+}
 
 interface DVHGlassType {
   sku: string
@@ -15,18 +28,6 @@ interface DVHGlassType {
   pricePerM2: number
   isLaminated: boolean
 }
-
-const DVH_GLASS_TYPES: DVHGlassType[] = [
-  { sku: "1040", name: "Float Incoloro 4 mm", pricePerM2: 17490.66, isLaminated: false },
-  { sku: "1050", name: "Float Incoloro 5 mm", pricePerM2: 23033.6, isLaminated: false },
-  { sku: "1060", name: "Float Incoloro 6 mm", pricePerM2: 28567.95, isLaminated: false },
-  { sku: "1080", name: "Float Incoloro 8 mm", pricePerM2: 38429.22, isLaminated: false },
-  { sku: "1100", name: "Float Incoloro 10 mm", pricePerM2: 54297.1, isLaminated: false },
-  { sku: "2030", name: "Laminado Incoloro 3+3", pricePerM2: 52279.53, isLaminated: true },
-  { sku: "2040", name: "Laminado Incoloro 4+4", pricePerM2: 65313.39, isLaminated: true },
-  { sku: "2050", name: "Laminado Incoloro 5+5", pricePerM2: 78519.42, isLaminated: true },
-  { sku: "2060", name: "Laminado Incoloro 6+6", pricePerM2: 87506.84, isLaminated: true },
-]
 
 const CHAMBER_PRICES = {
   6: 5500,
@@ -38,6 +39,13 @@ const CHAMBER_PRICES = {
 
 export default function DVHProductQuotation() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const productParam = searchParams.get("product")
+
+  const [allGlassTypes, setAllGlassTypes] = useState<TransformedGlassType[]>([])
+  const [availableGlassTypes, setAvailableGlassTypes] = useState<DVHGlassType[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string>("")
 
   // Form state
   const [quantity, setQuantity] = useState<number>(1)
@@ -58,6 +66,60 @@ export default function DVHProductQuotation() {
   const [discountPercent] = useState<number>(0)
   const [taxPercent] = useState<number>(0)
   const [marginPercent] = useState<number>(0)
+
+  useEffect(() => {
+    async function loadGlassTypes() {
+      try {
+        setLoading(true)
+        setError("")
+
+        console.log("[v0] DVH: Starting to load glass types...")
+
+        // Fetch all glass types from API
+        const allTypes = await fetchAllGlassTypes()
+        console.log("[v0] DVH: All glass types response:", allTypes)
+
+        const transformedTypes = allTypes.map(transformGlassType)
+        console.log("[v0] DVH: Transformed glass types:", transformedTypes)
+        setAllGlassTypes(transformedTypes)
+
+        // Get category ID from URL parameter (575 for DVH)
+        const categoryId = productParam ? Number.parseInt(productParam) : 575
+        console.log("[v0] DVH: Using category ID:", categoryId)
+
+        const category = await fetchGlassCategory(categoryId)
+        console.log("[v0] DVH: Category response:", category)
+        console.log("[v0] DVH: Category tipo_de_vidrio array:", category.acf.tipo_de_vidrio)
+
+        // Filter glass types based on category's tipo_de_vidrio field
+        const filteredTypes = transformedTypes.filter((type) =>
+          category.acf.tipo_de_vidrio.some(
+            (id) => allTypes.find((apiType) => apiType.id === id)?.acf.code === type.code,
+          ),
+        )
+        console.log("[v0] DVH: Filtered glass types:", filteredTypes)
+
+        // Convert to DVH format
+        const dvhGlassTypes: DVHGlassType[] = filteredTypes.map((type) => ({
+          sku: type.code,
+          name: type.name,
+          pricePerM2: type.price,
+          isLaminated: type.isSafety, // Use isSafety as laminated indicator
+        }))
+
+        console.log("[v0] DVH: Converted to DVH format:", dvhGlassTypes)
+        setAvailableGlassTypes(dvhGlassTypes)
+      } catch (err) {
+        console.log("[v0] DVH: Error loading glass types:", err)
+        setError("Error al cargar los tipos de vidrio. Por favor, intenta de nuevo.")
+        console.error("Error loading glass types:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadGlassTypes()
+  }, [productParam])
 
   // Validation functions
   const parseDimensions = (widthValue: number, heightValue: number, unitValue: "cm" | "mm") => {
@@ -110,8 +172,8 @@ export default function DVHProductQuotation() {
   const validateLaminatedRequirement = () => {
     if (!glassA || !glassB) return ""
 
-    const glassTypeA = DVH_GLASS_TYPES.find((g) => g.sku === glassA)
-    const glassTypeB = DVH_GLASS_TYPES.find((g) => g.sku === glassB)
+    const glassTypeA = availableGlassTypes.find((g) => g.sku === glassA)
+    const glassTypeB = availableGlassTypes.find((g) => g.sku === glassB)
 
     if (glassTypeA && glassTypeB && !glassTypeA.isLaminated && !glassTypeB.isLaminated) {
       return "El DVH debe incluir al menos un vidrio laminado (de seguridad) en uno de sus lados."
@@ -147,9 +209,8 @@ export default function DVHProductQuotation() {
     const areaUnitM2 = Math.max(actualAreaM2, 0.5) // Minimum 0.50 m²
     const perimeterM = Math.max(actualPerimeterM, 2.8) // Minimum 2.80 ml
 
-    // Get glass types and chamber price
-    const glassTypeA = DVH_GLASS_TYPES.find((g) => g.sku === glassA)
-    const glassTypeB = DVH_GLASS_TYPES.find((g) => g.sku === glassB)
+    const glassTypeA = availableGlassTypes.find((g) => g.sku === glassA)
+    const glassTypeB = availableGlassTypes.find((g) => g.sku === glassB)
     const chamberPrice = CHAMBER_PRICES[chamber as keyof typeof CHAMBER_PRICES] || 0
 
     if (!glassTypeA || !glassTypeB || !chamberPrice) {
@@ -196,7 +257,19 @@ export default function DVHProductQuotation() {
       priceTotal,
       errors: [],
     }
-  }, [width, height, unit, chamber, glassA, glassB, quantity, discountPercent, taxPercent, marginPercent])
+  }, [
+    width,
+    height,
+    unit,
+    chamber,
+    glassA,
+    glassB,
+    quantity,
+    discountPercent,
+    taxPercent,
+    marginPercent,
+    availableGlassTypes,
+  ])
 
   const goBack = () => {
     window.location.href = "https://viprou.com"
@@ -207,8 +280,8 @@ export default function DVHProductQuotation() {
 
     if (calculations.errors.length > 0) return
 
-    const glassTypeA = DVH_GLASS_TYPES.find((g) => g.sku === glassA)
-    const glassTypeB = DVH_GLASS_TYPES.find((g) => g.sku === glassB)
+    const glassTypeA = availableGlassTypes.find((g) => g.sku === glassA)
+    const glassTypeB = availableGlassTypes.find((g) => g.sku === glassB)
 
     const { widthMm, heightMm } = parseDimensions(width, height, unit)
 
@@ -225,6 +298,28 @@ export default function DVHProductQuotation() {
     })
 
     router.push(`/checkout?${checkoutParams.toString()}`)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Cargando tipos de vidrio DVH...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Intentar de nuevo</Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -251,7 +346,9 @@ export default function DVHProductQuotation() {
                     Alta Eficiencia
                   </Badge>
                 </h1>
-                <p className="text-gray-600 text-xs sm:text-base">Configurá tu DVH personalizado</p>
+                <p className="text-gray-600 text-xs sm:text-base">
+                  Configurá tu DVH personalizado - {availableGlassTypes.length} tipos de vidrio disponibles
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -388,7 +485,7 @@ export default function DVHProductQuotation() {
                       <SelectValue placeholder="Selecciona el vidrio del lado A" />
                     </SelectTrigger>
                     <SelectContent>
-                      {DVH_GLASS_TYPES.map((glass) => (
+                      {availableGlassTypes.map((glass) => (
                         <SelectItem key={glass.sku} value={glass.sku}>
                           <div className="flex items-center justify-between w-full">
                             <span>{glass.name}</span>
@@ -412,7 +509,7 @@ export default function DVHProductQuotation() {
                       <SelectValue placeholder="Selecciona el vidrio del lado B" />
                     </SelectTrigger>
                     <SelectContent>
-                      {DVH_GLASS_TYPES.map((glass) => (
+                      {availableGlassTypes.map((glass) => (
                         <SelectItem key={glass.sku} value={glass.sku}>
                           <div className="flex items-center justify-between w-full">
                             <span>{glass.name}</span>
@@ -504,13 +601,13 @@ export default function DVHProductQuotation() {
                       <div className="flex justify-between items-start py-2 border-b gap-2">
                         <span className="text-gray-600 text-sm">Lado A:</span>
                         <span className="font-medium text-sm text-right">
-                          {DVH_GLASS_TYPES.find((g) => g.sku === glassA)?.name}
+                          {availableGlassTypes.find((g) => g.sku === glassA)?.name}
                         </span>
                       </div>
                       <div className="flex justify-between items-start py-2 border-b gap-2">
                         <span className="text-gray-600 text-sm">Lado B:</span>
                         <span className="font-medium text-sm text-right">
-                          {DVH_GLASS_TYPES.find((g) => g.sku === glassB)?.name}
+                          {availableGlassTypes.find((g) => g.sku === glassB)?.name}
                         </span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b">
