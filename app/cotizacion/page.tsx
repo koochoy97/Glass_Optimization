@@ -1,7 +1,18 @@
+"use client"
+
 import { Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import GlassProductQuotation from "@/components/glass-product-quotation"
+import DVHProductQuotation from "@/components/dvh-product-quotation"
 
 function QuotationContent() {
+  const searchParams = useSearchParams()
+  const productId = searchParams.get("product")
+
+  if (productId === "575") {
+    return <DVHProductQuotation />
+  }
+
   return <GlassProductQuotation />
 }
 

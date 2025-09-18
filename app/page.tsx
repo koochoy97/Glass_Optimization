@@ -25,6 +25,7 @@ const getCategoryIcon = (categoryName: string): string => {
   if (name.includes("tapa") && name.includes("mesa")) return "🪑"
   if (name.includes("espejo")) return "🪞"
   if (name.includes("mampara")) return "🛁"
+  if (name.includes("dvh") || name.includes("doble vidriado")) return "🔷"
 
   // Default icon
   return "🪟"
