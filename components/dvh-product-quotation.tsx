@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ArrowLeft, Plus, Minus, Shield, ChevronDown, AlertCircle, Info } from "lucide-react"
 
 interface DVHGlassType {
@@ -200,7 +199,7 @@ export default function DVHProductQuotation() {
   }, [width, height, unit, chamber, glassA, glassB, quantity, discountPercent, taxPercent, marginPercent])
 
   const goBack = () => {
-    router.push("/")
+    window.location.href = "https://viprou.com"
   }
 
   const handleOrderClick = () => {
@@ -523,45 +522,49 @@ export default function DVHProductQuotation() {
                     </div>
 
                     {/* Calculation Details */}
-                    <Collapsible open={showCalculationDetails} onOpenChange={setShowCalculationDetails}>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between bg-transparent">
-                          Detalle de cálculo
-                          <ChevronDown
-                            className={`w-4 h-4 transition-transform ${showCalculationDetails ? "rotate-180" : ""}`}
-                          />
-                        </Button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="space-y-2 mt-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between text-sm">
-                          <span>Área por unidad:</span>
-                          <span>{calculations.areaUnitM2.toFixed(2)} m²</span>
+                    <div>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between bg-transparent"
+                        onClick={() => setShowCalculationDetails(!showCalculationDetails)}
+                      >
+                        Detalle de cálculo
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform ${showCalculationDetails ? "rotate-180" : ""}`}
+                        />
+                      </Button>
+                      {showCalculationDetails && (
+                        <div className="space-y-2 mt-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="flex justify-between text-sm">
+                            <span>Área por unidad:</span>
+                            <span>{calculations.areaUnitM2.toFixed(2)} m²</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Perímetro por unidad:</span>
+                            <span>{calculations.perimeterM.toFixed(2)} m</span>
+                          </div>
+                          <div className="text-xs text-gray-500 italic mt-2 pt-2 border-t">
+                            * Tamaños mínimos a facturar: 0,50 m² | Cámara mínima: 2,80 ml
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Costo vidrio A:</span>
+                            <span>${Math.round(calculations.costGlassAUnit).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Costo vidrio B:</span>
+                            <span>${Math.round(calculations.costGlassBUnit).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Costo cámara:</span>
+                            <span>${Math.round(calculations.costChamberUnit).toLocaleString()}</span>
+                          </div>
+                          <div className="border-t pt-2 flex justify-between text-sm font-medium">
+                            <span>Precio unitario:</span>
+                            <span>${Math.round(calculations.priceUnit).toLocaleString()}</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Perímetro por unidad:</span>
-                          <span>{calculations.perimeterM.toFixed(2)} m</span>
-                        </div>
-                        <div className="text-xs text-gray-500 italic mt-2 pt-2 border-t">
-                          * Tamaños mínimos a facturar: 0,50 m² | Cámara mínima: 2,80 ml
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Costo vidrio A:</span>
-                          <span>${Math.round(calculations.costGlassAUnit).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Costo vidrio B:</span>
-                          <span>${Math.round(calculations.costGlassBUnit).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Costo cámara:</span>
-                          <span>${Math.round(calculations.costChamberUnit).toLocaleString()}</span>
-                        </div>
-                        <div className="border-t pt-2 flex justify-between text-sm font-medium">
-                          <span>Precio unitario:</span>
-                          <span>${Math.round(calculations.priceUnit).toLocaleString()}</span>
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
+                      )}
+                    </div>
 
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 text-lg sm:text-xl font-bold text-green-600 bg-green-50 px-4 rounded-lg mt-6 gap-1 sm:gap-0">
                       <span>Precio Total:</span>
