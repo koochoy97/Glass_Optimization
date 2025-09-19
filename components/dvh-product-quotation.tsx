@@ -206,7 +206,7 @@ export default function DVHProductQuotation() {
     const actualAreaM2 = (widthMm * heightMm) / 1000000
     const actualPerimeterM = 2 * ((widthMm + heightMm) / 1000)
 
-    const areaUnitM2 = Math.max(actualAreaM2, 0.5) // Minimum 0.50 m²
+    const areaUnitM2 = Math.max(actualAreaM2, 1.0) // Minimum 1.00 m²
     const perimeterM = Math.max(actualPerimeterM, 2.8) // Minimum 2.80 ml
 
     const glassTypeA = availableGlassTypes.find((g) => g.sku === glassA)
@@ -641,7 +641,7 @@ export default function DVHProductQuotation() {
                             <span>{calculations.perimeterM.toFixed(2)} m</span>
                           </div>
                           <div className="text-xs text-gray-500 italic mt-2 pt-2 border-t">
-                            * Tamaños mínimos a facturar: 0,50 m² | Cámara mínima: 2,80 ml
+                            * Tamaños mínimos a facturar: 1,00 m² | Cámara mínima: 2,80 ml
                           </div>
                           <div className="flex justify-between text-sm">
                             <span>Costo vidrio A:</span>
@@ -674,6 +674,7 @@ export default function DVHProductQuotation() {
                       <Button
                         size="lg"
                         className="w-full px-12 py-4 text-lg font-semibold rounded-xl shadow-lg"
+                        disabled={calculations.errors.length > 0 || !calculations.priceTotal}
                         onClick={handleOrderClick}
                       >
                         Agregar al carrito
