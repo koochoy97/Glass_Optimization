@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Plus, Minus, Shield, ChevronDown, AlertCircle, Info, Loader2 } from "lucide-react"
 import { fetchAllGlassTypes, fetchGlassCategory, transformGlassType } from "@/lib/api"
+import { QuotationBanner } from "@/components/quotation-banner"
+import { CouponField } from "@/components/coupon-field"
 
 interface TransformedGlassType {
   code: string
@@ -66,6 +68,11 @@ export default function DVHProductQuotation() {
   const [discountPercent] = useState<number>(0)
   const [taxPercent] = useState<number>(0)
   const [marginPercent] = useState<number>(0)
+
+  // Coupon state management
+  const [couponDiscount, setCouponDiscount] = useState<number>(0)
+  const [finalPrice, setFinalPrice] = useState<number>(0)
+  const [isCouponApplied, setIsCouponApplied] = useState<boolean>(false)
 
   useEffect(() => {
     async function loadGlassTypes() {
@@ -275,6 +282,19 @@ export default function DVHProductQuotation() {
     window.location.href = "https://viprou.com"
   }
 
+  // Coupon handlers
+  const handleCouponApplied = (discount: number, newFinalPrice: number) => {
+    setCouponDiscount(discount)
+    setFinalPrice(newFinalPrice)
+    setIsCouponApplied(true)
+  }
+
+  const handleCouponRemoved = () => {
+    setCouponDiscount(0)
+    setFinalPrice(0)
+    setIsCouponApplied(false)
+  }
+
   const handleOrderClick = () => {
     setFormSubmitted(true)
 
@@ -285,6 +305,8 @@ export default function DVHProductQuotation() {
 
     const { widthMm, heightMm } = parseDimensions(width, height, unit)
 
+    const priceToUse = isCouponApplied ? finalPrice : calculations.priceTotal
+
     const checkoutParams = new URLSearchParams({
       categoryId: "dvh",
       categoryName: "DVH - Doble Vidriado Hermético",
@@ -294,7 +316,12 @@ export default function DVHProductQuotation() {
       quantity: quantity.toString(),
       unit: "mm",
       thickness: chamber,
-      price: Math.round(calculations.priceTotal).toString(),
+      price: Math.round(priceToUse).toString(),
+      ...(isCouponApplied && {
+        couponCode: "PRIMERA10",
+        couponDiscount: couponDiscount.toString(),
+        originalPrice: Math.round(calculations.priceTotal).toLocaleString(),
+      }),
     })
 
     router.push(`/checkout?${checkoutParams.toString()}`)
@@ -359,6 +386,8 @@ export default function DVHProductQuotation() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <QuotationBanner />
+
         <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
           {/* Left Column - Configuration */}
           <div className="space-y-4 sm:space-y-6">
@@ -663,12 +692,39 @@ export default function DVHProductQuotation() {
                       )}
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 text-lg sm:text-xl font-bold text-green-600 bg-green-50 px-4 rounded-lg mt-6 gap-1 sm:gap-0">
-                      <span>Precio Total:</span>
-                      <span className="text-xl sm:text-2xl">
-                        ${Math.round(calculations.priceTotal).toLocaleString()}
-                      </span>
+                    <div className="space-y-3">
+                      {isCouponApplied ? (
+                        <>
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 text-base text-gray-600 gap-1 sm:gap-0">
+                            <span>Precio sin descuento:</span>
+                            <span className="line-through">
+                              ${Math.round(calculations.priceTotal).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 text-base text-green-600 gap-1 sm:gap-0">
+                            <span>Descuento primera compra (10%):</span>
+                            <span>−${Math.round(couponDiscount).toLocaleString()}</span>
+                          </div>
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 text-lg sm:text-xl font-bold text-green-600 bg-green-50 px-4 rounded-lg gap-1 sm:gap-0">
+                            <span>Precio final:</span>
+                            <span className="text-xl sm:text-2xl">${Math.round(finalPrice).toLocaleString()}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 text-lg sm:text-xl font-bold text-green-600 bg-green-50 px-4 rounded-lg mt-6 gap-1 sm:gap-0">
+                          <span>Precio Total:</span>
+                          <span className="text-xl sm:text-2xl">
+                            ${Math.round(calculations.priceTotal).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
                     </div>
+
+                    <CouponField
+                      totalPrice={calculations.priceTotal}
+                      onCouponApplied={handleCouponApplied}
+                      onCouponRemoved={handleCouponRemoved}
+                    />
 
                     <div className="mt-6">
                       <Button

@@ -17,6 +17,9 @@ interface QuotationData {
   unit: string
   thickness: string
   price: number
+  couponCode?: string
+  couponDiscount?: number
+  originalPrice?: number
 }
 
 export function CheckoutForm() {
@@ -36,6 +39,12 @@ export function CheckoutForm() {
     const priceParam = searchParams.get("price") || "0"
     const price = Number.parseFloat(priceParam)
 
+    const couponCode = searchParams.get("couponCode") || ""
+    const couponDiscountParam = searchParams.get("couponDiscount") || "0"
+    const originalPriceParam = searchParams.get("originalPrice") || "0"
+    const couponDiscount = Number.parseFloat(couponDiscountParam)
+    const originalPrice = Number.parseFloat(originalPriceParam)
+
     if (categoryName && glassType && width && height && price > 0) {
       return {
         categoryName,
@@ -46,6 +55,9 @@ export function CheckoutForm() {
         unit,
         thickness,
         price,
+        couponCode: couponCode || undefined,
+        couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+        originalPrice: originalPrice > 0 ? originalPrice : undefined,
       }
     }
     return null
@@ -90,6 +102,13 @@ export function CheckoutForm() {
           quantity: Number(quotationData.quantity),
           thickness: quotationData.thickness,
           totalPrice: quotationData.price,
+          ...(quotationData.couponCode && {
+            coupon: {
+              code: quotationData.couponCode,
+              discount: quotationData.couponDiscount || 0,
+              originalPrice: quotationData.originalPrice || quotationData.price,
+            },
+          }),
         },
         timestamp: new Date().toISOString(),
         source: "glass-quotation-system",
@@ -97,7 +116,6 @@ export function CheckoutForm() {
 
       console.log("[v0] Sending order data to webhook:", orderData)
 
-      // Send to webhook
       const webhookResponse = await fetch("/api/webhook", {
         method: "POST",
         headers: {
@@ -117,7 +135,6 @@ export function CheckoutForm() {
       }
     } catch (error) {
       console.error("[v0] Error sending webhook:", error)
-      // Don't block the user flow, just log the error
     }
 
     const whatsappText = encodeURIComponent(
@@ -181,12 +198,33 @@ export function CheckoutForm() {
                 <span className="font-medium">{quotationData.thickness}mm</span>
               </div>
               <div className="border-t pt-2 mt-2">
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Precio Total:</span>
-                  <span className="text-green-600">
-                    ${quotationData.price.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
+                {quotationData.couponCode && quotationData.couponDiscount && quotationData.originalPrice ? (
+                  <>
+                    <div className="flex justify-between text-base text-gray-600">
+                      <span>Precio sin descuento:</span>
+                      <span className="line-through">
+                        ${quotationData.originalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-base text-green-600 mt-1">
+                      <span>Descuento primera compra (10%):</span>
+                      <span>
+                        −${quotationData.couponDiscount.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold text-green-600 mt-2">
+                      <span>Precio Final:</span>
+                      <span>${quotationData.price.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Precio Total:</span>
+                    <span className="text-green-600">
+                      ${quotationData.price.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
