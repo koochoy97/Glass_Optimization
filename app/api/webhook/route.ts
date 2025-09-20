@@ -6,6 +6,10 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Webhook received order data:", JSON.stringify(orderData, null, 2))
 
+    const hasCoupon = orderData.order.coupon && orderData.order.coupon.code
+    const discountPercentage = hasCoupon ? "10%" : "0%"
+    const originalPrice = hasCoupon ? orderData.order.coupon.originalPrice : orderData.order.totalPrice
+
     const transformedData = {
       body: {
         orderItems: [
@@ -17,11 +21,22 @@ export async function POST(request: NextRequest) {
             customerComments: orderData.customer.comments || "",
             customerName: orderData.customer.name,
             customerPhone: orderData.customer.phone,
+            ...(hasCoupon && {
+              couponCode: orderData.order.coupon.code,
+              couponDiscount: orderData.order.coupon.discount,
+            }),
           },
         ],
-        precio_sin_optimizar: orderData.order.totalPrice,
-        precio_optimizado: orderData.order.totalPrice, // Same as sin optimizar for now
-        descuento_aplicado: "0%", // No discount applied for now
+        precio_sin_optimizar: originalPrice,
+        precio_optimizado: orderData.order.totalPrice, // Final price after discount
+        descuento_aplicado: discountPercentage, // Use actual discount percentage
+        ...(hasCoupon && {
+          coupon_aplicado: {
+            codigo: orderData.order.coupon.code,
+            descuento_monto: orderData.order.coupon.discount,
+            precio_original: orderData.order.coupon.originalPrice,
+          },
+        }),
       },
     }
 
