@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Plus, Minus, Shield, Eye, Sun, Loader2 } from "lucide-react"
 import { fetchAllGlassTypes, fetchGlassCategory, transformGlassType } from "@/lib/api"
 import { QuotationBanner } from "@/components/quotation-banner"
-import { CouponField } from "@/components/coupon-field"
 
 interface TransformedGlassType {
   code: string
@@ -53,10 +52,6 @@ export default function GlassProductQuotation() {
   const [heightTouched, setHeightTouched] = useState<boolean>(false)
   const [formSubmitted, setFormSubmitted] = useState<boolean>(false)
   const [dimensionsAutoPopulated, setDimensionsAutoPopulated] = useState<boolean>(false)
-
-  const [couponDiscount, setCouponDiscount] = useState<number>(0)
-  const [finalPrice, setFinalPrice] = useState<number>(0)
-  const [isCouponApplied, setIsCouponApplied] = useState<boolean>(false)
 
   const parseDimensions = (widthValue: number, heightValue: number, unitValue: "cm" | "mm") => {
     let widthMm: number
@@ -291,24 +286,10 @@ export default function GlassProductQuotation() {
     }
   }
 
-  const handleCouponApplied = (discount: number, newFinalPrice: number) => {
-    setCouponDiscount(discount)
-    setFinalPrice(newFinalPrice)
-    setIsCouponApplied(true)
-  }
-
-  const handleCouponRemoved = () => {
-    setCouponDiscount(0)
-    setFinalPrice(0)
-    setIsCouponApplied(false)
-  }
-
   const handleOrderClick = () => {
     setFormSubmitted(true)
 
     if (!currentGlassType || !calculations.totalPrice || dimensionError) return
-
-    const priceToUse = isCouponApplied ? finalPrice : calculations.totalPrice
 
     const checkoutParams = new URLSearchParams({
       categoryId: productParam || "343",
@@ -319,12 +300,7 @@ export default function GlassProductQuotation() {
       quantity: quantity.toString(),
       unit: unit,
       thickness: currentGlassType.thickness.toString(),
-      price: priceToUse.toString(),
-      ...(isCouponApplied && {
-        couponCode: "PRIMERA10",
-        couponDiscount: couponDiscount.toString(),
-        originalPrice: calculations.totalPrice.toString(),
-      }),
+      price: calculations.totalPrice.toString(),
     })
 
     router.push(`/checkout?${checkoutParams.toString()}`)
@@ -690,34 +666,11 @@ export default function GlassProductQuotation() {
                     </div>
 
                     <div className="space-y-3">
-                      {isCouponApplied ? (
-                        <>
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 text-base text-gray-600 gap-1 sm:gap-0">
-                            <span>Precio sin descuento:</span>
-                            <span className="line-through">${calculations.totalPrice.toLocaleString()}</span>
-                          </div>
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 text-base text-green-600 gap-1 sm:gap-0">
-                            <span>Descuento primera compra (10%):</span>
-                            <span>−${couponDiscount.toLocaleString()}</span>
-                          </div>
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 text-lg sm:text-xl font-bold text-green-600 bg-green-50 px-4 rounded-lg gap-1 sm:gap-0">
-                            <span>Precio final:</span>
-                            <span className="text-xl sm:text-2xl">${Math.round(finalPrice).toLocaleString()}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 text-lg sm:text-xl font-bold text-green-600 bg-green-50 px-4 rounded-lg mt-6 gap-1 sm:gap-0">
-                          <span>Precio Total:</span>
-                          <span className="text-xl sm:text-2xl">${calculations.totalPrice.toLocaleString()}</span>
-                        </div>
-                      )}
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 text-lg sm:text-xl font-bold text-green-600 bg-green-50 px-4 rounded-lg mt-6 gap-1 sm:gap-0">
+                        <span>Precio Total:</span>
+                        <span className="text-xl sm:text-2xl">${calculations.totalPrice.toLocaleString()}</span>
+                      </div>
                     </div>
-
-                    <CouponField
-                      totalPrice={calculations.totalPrice}
-                      onCouponApplied={handleCouponApplied}
-                      onCouponRemoved={handleCouponRemoved}
-                    />
 
                     <div className="mt-6">
                       <Button

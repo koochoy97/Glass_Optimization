@@ -1,12 +1,14 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Phone, User, MessageSquare, ShoppingCart } from "lucide-react"
+import { ArrowLeft, Phone, User, MessageSquare, ShoppingCart, Tag, Loader2 } from "lucide-react"
 
 interface QuotationData {
   categoryName: string
@@ -17,9 +19,6 @@ interface QuotationData {
   unit: string
   thickness: string
   price: number
-  couponCode?: string
-  couponDiscount?: number
-  originalPrice?: number
 }
 
 export function CheckoutForm() {
@@ -39,12 +38,6 @@ export function CheckoutForm() {
     const priceParam = searchParams.get("price") || "0"
     const price = Number.parseFloat(priceParam)
 
-    const couponCode = searchParams.get("couponCode") || ""
-    const couponDiscountParam = searchParams.get("couponDiscount") || "0"
-    const originalPriceParam = searchParams.get("originalPrice") || "0"
-    const couponDiscount = Number.parseFloat(couponDiscountParam)
-    const originalPrice = Number.parseFloat(originalPriceParam)
-
     if (categoryName && glassType && width && height && price > 0) {
       return {
         categoryName,
@@ -55,9 +48,6 @@ export function CheckoutForm() {
         unit,
         thickness,
         price,
-        couponCode: couponCode || undefined,
-        couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
-        originalPrice: originalPrice > 0 ? originalPrice : undefined,
       }
     }
     return null
@@ -67,6 +57,119 @@ export function CheckoutForm() {
   const [customerPhone, setCustomerPhone] = useState("")
   const [customerComments, setCustomerComments] = useState("")
   const [error, setError] = useState("")
+
+  const [couponCode, setCouponCode] = useState("")
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string
+    discount: number
+    originalPrice: number
+  } | null>(null)
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState("")
+  const [couponBlurred, setCouponBlurred] = useState(false)
+
+  const isValidPhone = (phone: string) => {
+    const phoneRegex = /^(\+54\s?)?(\d{2,4}\s?\d{4}\s?\d{4}|\d{10,11})$/
+    return phoneRegex.test(phone.replace(/\s/g, ""))
+  }
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Remove spaces and hyphens from input
+    const filteredValue = e.target.value.replace(/[\s-]/g, "")
+    setCustomerPhone(filteredValue)
+    if (error.includes("celular") || error.includes("completá")) {
+      setError("")
+    }
+  }
+
+  const getCouponValidationMessage = () => {
+    return null
+  }
+
+  const getCouponBlurError = () => {
+    if (!couponBlurred || !couponCode.trim()) return null
+
+    if (!customerPhone.trim()) {
+      return "Debes completar tu número de teléfono en los datos de contacto para validar el código"
+    }
+    if (!isValidPhone(customerPhone)) {
+      return "Debes ingresar un número de teléfono válido en los datos de contacto para validar el código"
+    }
+    return null
+  }
+
+  const validateCoupon = async () => {
+    if (!couponCode.trim() || !customerPhone.trim()) {
+      setCouponError("Por favor ingresa el código y tu número de teléfono en los datos de contacto")
+      return
+    }
+
+    if (!isValidPhone(customerPhone)) {
+      setCouponError("Por favor ingresa un número de teléfono válido en los datos de contacto")
+      return
+    }
+
+    if (couponCode.toUpperCase() !== "PRIMERA10") {
+      setCouponError("Código de descuento inválido")
+      return
+    }
+
+    setCouponLoading(true)
+    setCouponError("")
+
+    try {
+      const requestData = {
+        phone: customerPhone,
+        couponCode: couponCode.toUpperCase(),
+      }
+
+      console.log("[v0] Sending coupon validation request:", requestData)
+
+      const response = await fetch("https://n8n.viprou.com/webhook/a17be231-bf89-4a64-bf22-044ef9ec95db", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      })
+
+      console.log("[v0] Webhook response status:", response.status)
+      console.log("[v0] Webhook response headers:", Object.fromEntries(response.headers.entries()))
+
+      // Try to get response body regardless of status
+      let responseData
+      try {
+        responseData = await response.json()
+        console.log("[v0] Webhook response data:", responseData)
+      } catch (jsonError) {
+        const responseText = await response.text()
+        console.log("[v0] Webhook response text:", responseText)
+        responseData = responseText
+      }
+
+      if (response.ok && responseData?.validation === "Usuario No Existe") {
+        // Fixed validation path - removed .data
+        console.log("[v0] Coupon validation successful - new user")
+        const discount = quotationData ? quotationData.price * 0.1 : 0
+        setAppliedCoupon({
+          code: couponCode.toUpperCase(),
+          discount,
+          originalPrice: quotationData?.price || 0,
+        })
+        setCouponError("")
+      } else {
+        console.log("[v0] Coupon validation failed - user already exists or other error")
+        setCouponError("Este número ya utilizó el descuento de primera compra")
+      }
+    } catch (error) {
+      console.error("[v0] Error validating coupon:", error)
+      setCouponError("Error al validar el código. Intenta nuevamente.")
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  const finalPrice = appliedCoupon ? (quotationData?.price || 0) - appliedCoupon.discount : quotationData?.price || 0
 
   const handleConfirmOrder = async () => {
     if (!customerName.trim() || !customerPhone.trim()) {
@@ -101,12 +204,12 @@ export function CheckoutForm() {
           },
           quantity: Number(quotationData.quantity),
           thickness: quotationData.thickness,
-          totalPrice: quotationData.price,
-          ...(quotationData.couponCode && {
+          totalPrice: finalPrice,
+          ...(appliedCoupon && {
             coupon: {
-              code: quotationData.couponCode,
-              discount: quotationData.couponDiscount || 0,
-              originalPrice: quotationData.originalPrice || quotationData.price,
+              code: appliedCoupon.code,
+              discount: appliedCoupon.discount,
+              originalPrice: appliedCoupon.originalPrice,
             },
           }),
         },
@@ -138,12 +241,12 @@ export function CheckoutForm() {
     }
 
     const whatsappText = encodeURIComponent(
-      `Hola, soy ${customerName.trim()} y quiero confirmar mi pedido de vidrios:\n\n📱 Mi teléfono: ${customerPhone.trim()}\n\n📋 Detalle del pedido:\n- Categoría: ${quotationData.categoryName}\n- Tipo de vidrio: ${quotationData.glassType}\n- Dimensiones: ${quotationData.width}${quotationData.unit} x ${quotationData.height}${quotationData.unit}\n- Cantidad: ${quotationData.quantity} pieza${Number(quotationData.quantity) > 1 ? "s" : ""}\n- Espesor: ${quotationData.thickness}mm\n\n💰 Precio total: $${quotationData.price.toLocaleString(
+      `Hola, soy ${customerName.trim()} y quiero confirmar mi pedido de vidrios:\\n\\n📱 Mi teléfono: ${customerPhone.trim()}\\n\\n📋 Detalle del pedido:\\n- Categoría: ${quotationData.categoryName}\\n- Tipo de vidrio: ${quotationData.glassType}\\n- Dimensiones: ${quotationData.width}${quotationData.unit} x ${quotationData.height}${quotationData.unit}\\n- Cantidad: ${quotationData.quantity} pieza${Number(quotationData.quantity) > 1 ? "s" : ""}\\n- Espesor: ${quotationData.thickness}mm\\n\\n💰 Precio total: $${finalPrice.toLocaleString(
         "es-AR",
         {
           minimumFractionDigits: 2,
         },
-      )}${customerComments.trim() ? `\n\n📝 Comentarios adicionales:\n${customerComments.trim()}` : ""}\n\n¡Gracias!`,
+      )}${customerComments.trim() ? `\\n\\n📝 Comentarios adicionales:\\n${customerComments.trim()}` : ""}\\n\\n¡Gracias!`,
     )
 
     const whatsappUrl = `https://wa.me/5491234567890?text=${whatsappText}`
@@ -198,23 +301,21 @@ export function CheckoutForm() {
                 <span className="font-medium">{quotationData.thickness}mm</span>
               </div>
               <div className="border-t pt-2 mt-2">
-                {quotationData.couponCode && quotationData.couponDiscount && quotationData.originalPrice ? (
+                {appliedCoupon ? (
                   <>
                     <div className="flex justify-between text-base text-gray-600">
                       <span>Precio sin descuento:</span>
                       <span className="line-through">
-                        ${quotationData.originalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                        ${appliedCoupon.originalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="flex justify-between text-base text-green-600 mt-1">
                       <span>Descuento primera compra (10%):</span>
-                      <span>
-                        −${quotationData.couponDiscount.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                      </span>
+                      <span>−${appliedCoupon.discount.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between text-lg font-bold text-green-600 mt-2">
                       <span>Precio Final:</span>
-                      <span>${quotationData.price.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
+                      <span>${finalPrice.toLocaleString("es-AR", { minimumFractionDigits: 2 })}</span>
                     </div>
                   </>
                 ) : (
@@ -230,6 +331,83 @@ export function CheckoutForm() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Tag className="h-5 w-5" />
+            Código de Descuento
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>¡10% OFF en tu primera compra!</strong> Usa el código <strong>PRIMERA10</strong> y obtén un
+              descuento especial.
+            </p>
+          </div>
+
+          {!appliedCoupon ? (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="coupon-code" className="mb-1 block text-sm font-medium">
+                  Código de descuento
+                </Label>
+                <Input
+                  id="coupon-code"
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase())
+                    setCouponError("")
+                    setCouponBlurred(false)
+                  }}
+                  onBlur={() => {
+                    if (couponCode.trim()) {
+                      setCouponBlurred(true)
+                    }
+                  }}
+                  // Removed placeholder from coupon input
+                  className="w-full"
+                />
+                {getCouponBlurError() && (
+                  <div className="mt-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-sm">
+                    {getCouponBlurError()}
+                  </div>
+                )}
+              </div>
+
+              <Button
+                onClick={validateCoupon}
+                disabled={!couponCode.trim() || !customerPhone.trim() || !isValidPhone(customerPhone) || couponLoading}
+                className="w-full sm:w-auto"
+              >
+                {couponLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Validando...
+                  </>
+                ) : (
+                  "Validar Código"
+                )}
+              </Button>
+
+              {couponError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {couponError}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+              <p className="text-green-800 font-medium">
+                ✅ Código {appliedCoupon.code} aplicado correctamente. ¡Ahorraste $
+                {appliedCoupon.discount.toLocaleString("es-AR", { minimumFractionDigits: 2 })}!
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Customer Information Form */}
       <Card>
@@ -269,13 +447,8 @@ export function CheckoutForm() {
                 id="customer-phone"
                 type="tel"
                 value={customerPhone}
-                onChange={(e) => {
-                  setCustomerPhone(e.target.value)
-                  if (error.includes("celular") || error.includes("completá")) {
-                    setError("")
-                  }
-                }}
-                placeholder="Ej: 11 1234-5678"
+                onChange={handlePhoneChange}
+                placeholder="Ej: 1112345678"
                 className={`w-full ${!customerPhone.trim() && error ? "border-red-300 focus:border-red-500" : ""}`}
                 required
               />
